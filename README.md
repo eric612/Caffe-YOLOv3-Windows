@@ -47,6 +47,9 @@ If load success , you can see the image window like this
 
 comming soon
 
-Known issue 
+### Known issue 
 
-1. box_data_layer can not read lable from lmdb
+1. Box_data_layer can not read lable from lmdb
+2. The result x,y,w,h between caffe and darknet were correct , but confidence was a little difference 
+3. The output size was different when max pooling layer at kernel size = 2 , stride = 1 , so i modify the original caffe code 
+4. The output size was different when conv layer at kernel size = 1, to avoid this problem I set pad = 0 (prototxt)
