@@ -43,11 +43,7 @@
 
 If load success , you can see the image window like this 
 
-<<<<<<< Updated upstream
-![alt tag](result.jpg)
-=======
 ![alt tag](predictions.jpg)
->>>>>>> Stashed changes
 
 ### trainning
 
