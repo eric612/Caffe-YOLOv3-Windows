@@ -2,6 +2,8 @@
 
 ## Reference
 
+> https://github.com/eric612/Vehicle-Detection
+
 > https://github.com/eric612/MobileNet-SSD-windows
 
 > https://github.com/gklz1982/caffe-yolov2
