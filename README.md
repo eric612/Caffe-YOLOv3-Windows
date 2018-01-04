@@ -22,10 +22,6 @@
 ```
 > cd $caffe_root/script
 > build_win.cmd
-> cd build
-> Caffe.sln
-> select release
-> build solutions
 ```
 
 ## Usage
