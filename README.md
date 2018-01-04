@@ -2,6 +2,8 @@
 
 ## Reference
 
+> https://github.com/eric612/MobileNet-SSD-windows
+
 > https://github.com/gklz1982/caffe-yolov2
 
 > https://github.com/duangenquan/YoloV2NCS
