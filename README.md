@@ -42,7 +42,7 @@
 
 If load success , you can see the image window like this 
 
-![alt tag](out\00001.jpg)
+![alt tag](out/00001.jpg)
 
 ### Trainning
 
@@ -90,7 +90,7 @@ Check files label_map.txt,trainval.txt,test_2007.txt are all correct
 ### Note
 
 1. There has no data augmentation code inside (ex.hue,rotation) , note the training mAp was bed , I will add it future
-2. I still try to train a good caffemodel , current deploy model was just show how to do training
+2. I still try to train a good caffemodel , current deploy model was just show how to do training 
 
 ### Future
 
