@@ -20,9 +20,17 @@
 
 ### Configuring and Building Caffe 
 
+#### Requirements
+
+ - Visual Studio 2013 or 2015
+ - [CMake](https://cmake.org/) 3.4 or higher (Visual Studio and [Ninja](https://ninja-build.org/) generators are supported)
+ - Anaconda 
+
+The build step was the same as [MobileNet-SSD-windows](https://github.com/eric612/MobileNet-SSD-windows)
+ 
 ```
 > cd $caffe_root/script
-> build_win.cmd
+> build_win.cmd 
 ```
 #### GPU Building
 
