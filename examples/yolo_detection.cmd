@@ -1,11 +1,11 @@
 @echo off
 @setlocal EnableDelayedExpansion
-set confidence_threshold=0.2
+set confidence_threshold=0.25
 set wait_time=0
 set in_dir=models\yolo
 
-scripts\build\examples\yolo\Release\yolo models\yolo\tiny-yolo.prototxt ^
-models\yolo\tiny-yolo.caffemodel ^
+scripts\build\examples\yolo\Release\yolo models\yolo\yolo.prototxt ^
+models\yolo\yolo_12500.caffemodel ^
 %in_dir% ^
 -file_type image ^
 -mean_value 0,0,0 ^

@@ -10,10 +10,10 @@ import numpy as np
 import sys, getopt
 
 def Print(name, data, sz, dims):
-	print "=======",name,"======"
-	print sz
-	print dims
-	print data
+	print ("=======",name,"======")
+	print (sz)
+	print (dims)
+	print (data)
 
 def main(argv):
 	model_filename = ''
@@ -21,13 +21,13 @@ def main(argv):
 	caffemodel_filename = ''
 	try:
 		opts, args = getopt.getopt(argv, "hm:w:o:")
-		print opts
+		print (opts)
 	except getopt.GetoptError:
-		print 'create_yolo_caffemodel.py -m <model_file> -w <yoloweight_filename> -o <caffemodel_output>'
+		print ('create_yolo_caffemodel.py -m <model_file> -w <yoloweight_filename> -o <caffemodel_output>')
 		sys.exit(2)
 	for opt, arg in opts:
 		if opt == '-h':
-			print 'create_yolo_caffemodel.py -m <model_file> -w <yoloweight_filename> -o <caffemodel_output>'
+			print ('create_yolo_caffemodel.py -m <model_file> -w <yoloweight_filename> -o <caffemodel_output>')
 			sys.exit()
 		elif opt == "-m":
 			model_filename = arg
@@ -36,9 +36,9 @@ def main(argv):
 		elif opt == "-o":
 			caffemodel_filename = arg
 			
-	print 'model file is ', model_filename
-	print 'weight file is ', yoloweight_filename
-	print 'output caffemodel file is ', caffemodel_filename
+	print ('model file is ', model_filename)
+	print ('weight file is ', yoloweight_filename)
+	print ('output caffemodel file is ', caffemodel_filename)
 	net = caffe.Net(model_filename, caffe.TEST)
 	params = net.params.keys()
 
@@ -50,14 +50,14 @@ def main(argv):
 	if (netWeightsInt[0]*10 + netWeightsInt[1]) >= 2:
 		start = 5
 
-	print transFlag
+	print (transFlag)
 
 	netWeightsFloat = np.fromfile(yoloweight_filename, dtype=np.float32)
 	netWeights = netWeightsFloat[start:] # start from the 5th entry, the first 4 entries are major, minor, revision and net.seen
-	print netWeights.shape
+	print (netWeights.shape)
 	count = 0
 
-	print "#Total Net Layer", len(net.layers)
+	print ("#Total Net Layer", len(net.layers))
 
 	layercnt = 0
 	for pr in params:
@@ -65,10 +65,10 @@ def main(argv):
 		lidx = list(net._layer_names).index(pr)
 		layer = net.layers[lidx]
 		if count == netWeights.shape[0] and (layer.type != 'BatchNorm' and layer.type != 'Scale'):
-			print "WARNING: no weights left for %s" % pr
+			print ("WARNING: no weights left for %s" % pr)
 			break
 		if layer.type == 'Convolution':
-			print pr+"(conv)" + "-"+str(layercnt)+"-"+str(len(net.params[pr]) > 1)
+			print (pr+"(conv)" + "-"+str(layercnt)+"-"+str(len(net.params[pr]) > 1))
 			# bias
 			if len(net.params[pr]) > 1:
 				bias_dim = net.params[pr][1].data.shape
@@ -101,7 +101,7 @@ def main(argv):
 				abcd = 10
 
 		elif layer.type == 'InnerProduct':
-			print pr+"(fc)"
+			print (pr+"(fc)")
 			# bias
 			biasSize = np.prod(net.params[pr][1].data.shape)
 			net.params[pr][1].data[...] = np.reshape(netWeights[count:count+biasSize], net.params[pr][1].data.shape)
@@ -115,12 +115,12 @@ def main(argv):
 				net.params[pr][0].data[...] = np.reshape(netWeights[count:count+weightSize], dims)
 			count = count + weightSize
 		elif layer.type == 'BatchNorm':
-			print pr+"(batchnorm)"
+			print (pr+"(batchnorm)")
 			net.params[pr][0].data[...] = batch_norm[1]	# mean
 			net.params[pr][1].data[...] = batch_norm[2]	# variance
 			net.params[pr][2].data[...] = 1.0	# scale factor
 		elif layer.type == 'Scale':
-			print pr+"(scale)"
+			print (pr+"(scale)")
 			if batch_norm is not None:
 				net.params[pr][0].data[...] = batch_norm[0]	# scale
 			batch_norm = None
@@ -128,9 +128,9 @@ def main(argv):
 				net.params[pr][1].data[...] = conv_bias	# bias
 				conv_bias = None
 		else:
-			print "WARNING: unsupported layer, "+pr
+			print ("WARNING: unsupported layer, "+pr)
 	if np.prod(netWeights.shape) != count:
-		print "ERROR: size mismatch: %d" % count
+		print ("ERROR: size mismatch: %d" % count)
 	net.save(caffemodel_filename)		
 		
 if __name__=='__main__':	

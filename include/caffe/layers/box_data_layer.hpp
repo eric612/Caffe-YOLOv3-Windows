@@ -33,8 +33,11 @@ class BoxDataLayer : public BasePrefetchingDataLayer<Dtype> {
  protected:
   virtual void load_batch(Batch<Dtype>* batch);
 
-  DataReader reader_;
+  DataReader<Datum> reader_;
   vector<int> sides_;
+  bool has_anno_type_;
+  int count = 0;
+  AnnotatedDatum_AnnotationType anno_type_;
 };
 
 }  // namespace caffe

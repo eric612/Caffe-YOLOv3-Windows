@@ -27,7 +27,7 @@
 #include <vector>
 //#include <caffe/yolo/region.h>
 #include <time.h>
-char* CLASSES[21] = { "__background__",
+char* CLASSES[21] = {
 "aeroplane", "bicycle", "bird", "boat",
 "bottle", "bus", "car", "cat", "chair",
 "cow", "diningtable", "dog", "horse",
@@ -393,7 +393,7 @@ int main(int argc, char** argv) {
 					cv::rectangle(img, pt1, pt2, cvScalar(0, 255, 0), 1, 8, 0);
 
 					char label[100];
-					sprintf(label, "%s,%f", CLASSES2[static_cast<int>(d[1])], score);
+					sprintf(label, "%s,%f", CLASSES[static_cast<int>(d[1])], score);
 					int baseline;
 					cv::Size size = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 0, &baseline);
 					cv::Point pt3;
@@ -411,109 +411,7 @@ int main(int argc, char** argv) {
 			data.push_back(img);
 		}
 	}
-	/*if (1)
-	{
-		std::ostream out(buf);
-		std::string file;
-		char buf2[1000];
-		sprintf(buf2, "test.jpg");
-		cv::String path(buf2); //select only jpg
 
-		cv::Mat img = cv::imread(buf2);
-		CHECK(!img.empty()) << "Unable to decode image " << file;
-		std::vector<vector<float> > detections = detector.Detect(img);
-		vector<cv::Mat> data;
-
-
-		for (int i = 0; i < detections.size(); ++i) {
-			const vector<float>& d = detections[i];
-			// Detection format: [image_id, label, score, xmin, ymin, xmax, ymax].
-			CHECK_EQ(d.size(), 7);
-			const float score = d[2];
-			//if (score >= confidence_threshold) {
-			if (1) {
-				out << file << " ";
-				out << static_cast<int>(d[1]) << " ";
-				out << score << " ";
-				out << static_cast<int>(d[3] * img.cols) << " ";
-				out << static_cast<int>(d[4] * img.rows) << " ";
-				out << static_cast<int>(d[5] * img.cols) << " ";
-				out << static_cast<int>(d[6] * img.rows) << std::endl;
-
-				cv::Point pt1, pt2;
-				pt1.x = (img.cols*d[3]);
-				pt1.y = (img.rows*d[4]);
-				pt2.x = (img.cols*d[5]);
-				pt2.y = (img.rows*d[6]);
-				cv::rectangle(img, pt1, pt2, cvScalar(0, 255, 0), 1, 8, 0);
-
-				char label[100];
-				sprintf(label, "%s,%f", CLASSES2[static_cast<int>(d[1])], score);
-				int baseline;
-				cv::Size size = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 0, &baseline);
-				cv::Point pt3;
-				pt3.x = pt1.x + size.width;
-				pt3.y = pt1.y - size.height;
-				cv::rectangle(img, pt1, pt3, cvScalar(0, 255, 0), -1);
-
-				cv::putText(img, label, pt1, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
-			}
-		}
-		cv::imshow("show", img);
-		cv::waitKey(wait_time);
-		data.push_back(img);
-	}
-	else
-	{
-		cv::String path("test.MOV"); //select only jpg
-		vector<cv::String> fn;
-		vector<cv::Mat> data;
-		cv::VideoCapture cap(path);
-
-		if (!cap.isOpened()) {
-			LOG(FATAL) << "Failed to open video: " << path;
-		}
-		cv::Mat img;
-		int frame_count = 0;
-		while (true) {
-			bool success = cap.read(img);
-			if (!success) {
-				LOG(INFO) << "Process " << frame_count << " frames from " << path;
-				break;
-			}
-			CHECK(!img.empty()) << "Error when read frame";
-
-			++frame_count;
-		}
-		if (cap.isOpened()) {
-			cap.release();
-		}
-	}*/
-
-
-	// Process image one by one.
-	//std::ifstream infile(argv[3]);
-	/*const string& indir = argv[3];
-	std::string file;
-
-	if (file_type == "image")
-	{
-		char buf[1000];
-		sprintf(buf, "%s/*.jpg", indir);
-		cv::String path(buf); //select only jpg
-
-		vector<cv::String> fn;
-		vector<cv::Mat> data;
-		cv::glob(path, fn, true); // recurse
-		for (size_t k = 0; k < fn.size(); ++k)
-		{
-			cv::Mat img = cv::imread(fn[k]);
-			if (img.empty()) continue; //only proceed if sucsessful
-									   // you probably want to do some preprocessing
-			CHECK(!img.empty()) << "Unable to decode image " << file;
-			std::vector<DetectedObject> detections = detector.Detect(img);
-		}
-	}*/
 	
 	return 0;
 }

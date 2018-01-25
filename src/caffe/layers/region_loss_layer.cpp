@@ -309,9 +309,9 @@ void RegionLossLayer<Dtype>::Forward_cpu(
       if (onlyclass) continue;
     }
 
-	char buf[1000];
-	sprintf(buf, "%d", side_);
-	printf(buf);
+	//char buf[1000];
+	//sprintf(buf, "%d", side_);
+	//printf(buf);
     for (int j = 0; j < side_; ++j)
       for (int i = 0; i < side_; ++i)
         for (int n = 0; n < num_; ++n){

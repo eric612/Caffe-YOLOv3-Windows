@@ -5,7 +5,7 @@ endif()
 
 file(GLOB_RECURSE python_srcs ${PROJECT_SOURCE_DIR}/python/*.cpp)
 
-add_library(pycaffe SHARED ${python_srcs})
+add_library(pycaffe MODULE ${python_srcs})
 caffe_default_properties(pycaffe)
 set_target_properties(pycaffe PROPERTIES PREFIX "" OUTPUT_NAME "_caffe")
 if(MSVC)
@@ -40,9 +40,6 @@ endif()
 file(GLOB python_files *.py requirements.txt)
 install(FILES ${python_files} DESTINATION python)
 
-file(GLOB files2 caffe/*.py)
-install(FILES  ${files2} DESTINATION python/caffe)
-
 # module
 install(DIRECTORY caffe
     DESTINATION python
@@ -54,7 +51,7 @@ install(DIRECTORY caffe
 
 # _caffe.so
 install(TARGETS pycaffe  DESTINATION python/caffe)
-install(DIRECTORY caffe/imagenet caffe/proto caffe/test DESTINATION python/caffe)
+
 if(MSVC AND INSTALL_PREREQUISITES)
   caffe_install_prerequisites(pycaffe DESTINATION python/caffe)
 endif()

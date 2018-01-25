@@ -1,4 +1,4 @@
-# caffe-yolov2
+# caffe-yolov2-windows
 
 ## Reference
 
@@ -10,12 +10,13 @@
 
 > https://github.com/duangenquan/YoloV2NCS
 
-## modifications
+## Modifications
 
-1. add pre-trained model
-2. fix bugs
-3. windows support
-4. vehicle detection
+1. caffe training 
+2. add pre-trained model
+3. fix bugs
+4. windows support
+5. vehicle detection
 
 ### Configuring and Building Caffe 
 
@@ -33,23 +34,65 @@
 1. convert yolo.cfg to yolo.prototxt
 2. convert yolo weights to caffemodel
 
-### detection
+### Detection
 
 `cd caffe_root`
-
-1. examples\yolo_detection.cmd
+1. Download pre-trained [caffmodel](https://drive.google.com/open?id=1WXD6Pi47ryGPiTEtGeN4eDQsplgo35qm) , save at location $caffe_root/models/yolo/
+2. examples\yolo_detection.cmd
 
 If load success , you can see the image window like this 
 
-![alt tag](predictions.jpg)
+![alt tag](out\00001.jpg)
 
-### trainning
+### Trainning
 
-comming soon
+There has two ways for training your dataset
 
-### Known issue 
+1. training with caffe (recommand)
+2. training with darknet project and convert the weights to caffemodel
 
-1. Box_data_layer can not read lable from lmdb
-2. The result x,y,w,h between caffe and darknet were correct , but confidence was a little difference 
-3. The output size was different when max pooling layer at kernel size = 2 , stride = 1 , so i modify the original caffe code 
-4. The output size was different when conv layer at kernel size = 1, to avoid this problem I set pad = 0 (prototxt)
+### training with caffe
+
+
+#### Prepare data option 1(recommand)
+
+Save [lmdb](https://drive.google.com/open?id=15VB2qthaf0s9aYxCSWt8xE2BDvaZPsth) at location $caffe_root\data\yolo\
+
+#### Prepare data option 2
+
+Put your dataset into $caffe_root\data\yolo\VOCdevkit
+
+```
+> cd $caffe_root\data\yolo
+> python get_list.py 
+```
+
+Check files label_map.txt,trainval.txt,test_2007.txt are all correct 
+
+```
+> cd $caffe_root\data\yolo
+> create_dataset.cmd
+```
+
+#### Run training
+
+```
+> cd $caffe_root
+> examples\yolo_train.cmd
+```
+
+### Training with darknet project
+
+[yolo-windows](https://github.com/unsky/yolo-for-windows-v2)
+
+[yolo-windows-my-version](https://github.com/eric612/yolov2-windows)
+
+### Note
+
+1. There has no data augmentation code inside (ex.hue,rotation) , note the training mAp was bed , I will add it future
+2. I still try to train a good caffemodel , current deploy model was just show how to do training
+
+### Future
+
+1. Add MobileNet-YOLO
+2. Data augmentation  

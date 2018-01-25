@@ -1,5 +1,7 @@
 #ifdef USE_OPENCV
 #include <opencv2/core/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 #endif  // USE_OPENCV
 #include <stdint.h>
 
@@ -9,6 +11,7 @@
 #include "caffe/layers/box_data_layer.hpp"
 #include "caffe/util/benchmark.hpp"
 
+#include "caffe/util/io.hpp"
 namespace caffe {
 
 template <typename Dtype>

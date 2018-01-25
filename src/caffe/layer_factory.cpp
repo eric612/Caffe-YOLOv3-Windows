@@ -23,8 +23,11 @@
 #include "caffe/layers/reorg_layer.hpp"
 #include "caffe/layers/region_loss_layer.hpp"
 #include "caffe/layers/detection_output_layer.hpp"
+#include "caffe/layers/detection_evaluate_layer.hpp"
 #include "caffe/layers/eval_detection_layer.hpp"
 #include "caffe/layers/box_data_layer.hpp"
+#include "caffe/layers/yolo_v2_loss_layer.hpp"
+#include "caffe/layers/reshape_layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 
 //#include "caffe/layers/memory_data_layer.hpp"
@@ -176,6 +179,12 @@ shared_ptr<Layer<Dtype> > GetDetectionOutputLayer(const LayerParameter& param) {
 REGISTER_LAYER_CREATOR(DetectionOutput, GetDetectionOutputLayer);
 
 template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetDetectionEvaluateLayer(const LayerParameter& param) {
+	return shared_ptr<Layer<Dtype> >(new DetectionEvaluateLayer<Dtype>(param));
+}
+REGISTER_LAYER_CREATOR(DetectionEvaluate, GetDetectionEvaluateLayer);
+
+template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetEvalDetectionLayer(const LayerParameter& param) {
 	return shared_ptr<Layer<Dtype> >(new EvalDetectionLayer<Dtype>(param));
 }
@@ -187,6 +196,17 @@ shared_ptr<Layer<Dtype> > GetBoxDataLayer(const LayerParameter& param) {
 }
 REGISTER_LAYER_CREATOR(BoxData, GetBoxDataLayer);
 
+template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetYoloV2LossLayer(const LayerParameter& param) {
+	return shared_ptr<Layer<Dtype> >(new YoloV2LossLayer<Dtype>(param));
+}
+REGISTER_LAYER_CREATOR(YoloV2Loss, GetYoloV2LossLayer);
+
+template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetReshapeLayer(const LayerParameter& param) {
+	return shared_ptr<Layer<Dtype> >(new ReshapeLayer<Dtype>(param));
+}
+REGISTER_LAYER_CREATOR(Reshape, GetReshapeLayer);
 // Get Relu layer according to engine.
 //template <typename Dtype>
 //shared_ptr<Layer<Dtype> > GetReLULayer(const LayerParameter& param) {
