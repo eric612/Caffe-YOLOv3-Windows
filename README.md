@@ -24,6 +24,9 @@
 > cd $caffe_root/script
 > build_win.cmd
 ```
+#### GPU Building
+
+config build_win.cmd "CPU_ONLY" = 0
 
 ## Usage
 
