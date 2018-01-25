@@ -89,7 +89,7 @@ Check files label_map.txt,trainval.txt,test_2007.txt are all correct
 
 ### Note
 
-1. There has no data augmentation code inside (ex.hue,rotation) , note the training mAp was bad , I will add it future
+1. There has no data augmentation code inside (ex.hue,rotation) , note the training mAp was bad 
 2. I still try to train a good caffemodel , currently ,the  deploy model was just show how to do training 
 
 ### Future
