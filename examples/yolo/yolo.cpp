@@ -27,6 +27,7 @@
 #include <vector>
 //#include <caffe/yolo/region.h>
 #include <time.h>
+#include "caffe/util/benchmark.hpp"
 char* CLASSES[21] = {
 "aeroplane", "bicycle", "bird", "boat",
 "bottle", "bus", "car", "cat", "chair",
@@ -368,7 +369,10 @@ int main(int argc, char** argv) {
 			if (img.empty()) continue; //only proceed if sucsessful
 									   // you probably want to do some preprocessing
 			CHECK(!img.empty()) << "Unable to decode image " << file;
+			CPUTimer batch_timer;
+			batch_timer.Start();
 			std::vector<vector<float> > detections = detector.Detect(img);
+			LOG(INFO) << "Computing time: " << batch_timer.MilliSeconds() << " ms.";
 
 			/* Print the detection results. */
 			for (int i = 0; i < detections.size(); ++i) {
@@ -411,7 +415,89 @@ int main(int argc, char** argv) {
 			data.push_back(img);
 		}
 	}
+	else
+	{
+		vector<cv::String> fn;
+		vector<cv::Mat> data;
+		//if (ext.compare("mp4") == 0)
+		//{
+		//	fn.push_back(indir);
+		//}
+		//else
+		{
+			char buf[1000];
+			sprintf(buf, "%s/*.mp4", argv[3]);
+			cv::String path(buf); //select only jpg		  
+			cv::glob(path, fn, true); // recurse
+		}
+		for (size_t k = 0; k < fn.size(); ++k)
+		{
+			out << fn[k] << std::endl;
+			cv::VideoCapture cap(fn[k]);
 
+			if (!cap.isOpened()) {
+				LOG(FATAL) << "Failed to open video: " << file;
+			}
+			cv::Mat img;
+			int frame_count = 0;
+			while (true) {
+				bool success = cap.read(img);
+				if (!success) {
+					LOG(INFO) << "Process " << frame_count << " frames from " << file;
+					break;
+				}
+				CHECK(!img.empty()) << "Error when read frame";
+				std::vector<vector<float> > detections = detector.Detect(img);
+
+				/* Print the detection results. */
+				for (int i = 0; i < detections.size(); ++i) {
+					const vector<float>& d = detections[i];
+					// Detection format: [image_id, label, score, xmin, ymin, xmax, ymax].
+					CHECK_EQ(d.size(), 7);
+					const float score = d[2];
+					if (score >= confidence_threshold) {
+						out << file << "_";
+						out << std::setfill('0') << std::setw(6) << frame_count << " ";
+						out << static_cast<int>(d[1]) << " ";
+						out << score << " ";
+						out << static_cast<int>(d[3] * img.cols) << " ";
+						out << static_cast<int>(d[4] * img.rows) << " ";
+						out << static_cast<int>(d[5] * img.cols) << " ";
+						out << static_cast<int>(d[6] * img.rows) << std::endl;
+
+						cv::Point pt1, pt2;
+						pt1.x = (img.cols*d[3]);
+						pt1.y = (img.rows*d[4]);
+						pt2.x = (img.cols*d[5]);
+						pt2.y = (img.rows*d[6]);
+						int index = static_cast<int>(d[1]);
+						int green = 255 * ((index + 1) % 3);
+						int blue = 255 * (index % 3);
+						int red = 255 * ((index + 1) % 4);
+						cv::rectangle(img, pt1, pt2, cvScalar(red, green, blue), 1, 8, 0);
+						char label[100];
+						sprintf(label, "%s,%f", CLASSES[static_cast<int>(d[1])], score);
+						int baseline;
+						cv::Size size = cv::getTextSize(label, cv::FONT_HERSHEY_SIMPLEX, 0.5, 0, &baseline);
+						cv::Point pt3;
+						pt3.x = pt1.x + size.width;
+						pt3.y = pt1.y - size.height;
+
+						cv::rectangle(img, pt1, pt3, cvScalar(red, green, blue), -1);
+
+						cv::putText(img, label, pt1, cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+					}
+				}
+
+				cv::imshow("show", img);
+				cv::waitKey(1);
+				++frame_count;
+			}
+			if (cap.isOpened()) {
+				cap.release();
+			}
+		}
+	}
 	
 	return 0;
 }
