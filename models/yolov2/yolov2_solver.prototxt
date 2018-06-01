@@ -29,6 +29,6 @@ stageiter: 40000
 stageiter: 50000
 
 iter_size: 2
-type: "RMSProp"
+type: "sgd"
 eval_type: "detection"
 ap_version: "11point"

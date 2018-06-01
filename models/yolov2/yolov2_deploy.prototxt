@@ -1,55 +1,10 @@
 name: "YOLONET"
-layer {
-  name: "data"
-  type: "AnnotatedData"
-  top: "data"
-  top: "label"
-  include {
-    phase: TRAIN
-  }
-  
-  transform_param {
-    scale: 0.007843
-    mirror: true
-    mean_value: 127.5
-    mean_value: 127.5
-    mean_value: 127.5
-    resize_param {
-      prob: 1.0
-      resize_mode: WARP
-      height: 416
-      width: 416
-      interp_mode: LINEAR
-      interp_mode: AREA
-      interp_mode: LANCZOS4
-    }
-    emit_constraint {
-      emit_type: CENTER
-    }
-    distort_param {
-      brightness_prob: 0.5
-      brightness_delta: 32.0
-      contrast_prob: 0.5
-      contrast_lower: 0.5
-      contrast_upper: 1.5
-      hue_prob: 0.5
-      hue_delta: 18.0
-      saturation_prob: 0.5
-      saturation_lower: 0.5
-      saturation_upper: 1.5
-      random_order_prob: 0.0
-    }
-  }
-  data_param {
-    source: "examples/VOC0712/VOC0712_trainval_lmdb"
-    batch_size: 8
-    backend: LMDB
-  }
-  annotated_data_param {
-	yolo_data_type : 1
-	yolo_data_jitter : 0.3
-    label_map_file:  "data/VOC0712/labelmap_voc.prototxt"
-  }
+input: "data"
+input_shape {
+  dim: 1
+  dim: 3
+  dim: 416
+  dim: 416
 }
 layer {
   name: "conv1"
@@ -1503,29 +1458,18 @@ layer {
   }
 }
 layer {
-  name: "Region_Loss"
-  type: "RegionLoss"
+  name: "detection_out"
+  type: "YoloDetectionOutput"
   bottom: "conv22"
-  bottom: "label"
-  top: "det_loss"
-  loss_weight: 1
-  region_loss_param {
-    side: 13
-    num_class: 20
+  top: "detection_out"
+  include {
+	phase: TEST
+  }
+  yolo_detection_output_param {
+    num_classes: 20
     coords: 4
-    num: 5
-    softmax: 1
-    jitter: 0.2
-    rescore: 1
-    
-    object_scale: 5.0
-    noobject_scale: 1.0
-    class_scale: 1.0
-    coord_scale: 1.0
-    
-    absolute: 1
-    thresh: 0.5
-    random: 0
+    confidence_threshold: 0.6
+	nms_threshold: 0.45
 
     biases: 1.08
     biases: 1.19
@@ -1537,7 +1481,5 @@ layer {
     biases: 5.11
     biases: 16.62
     biases: 10.52
-	
-	
   }
 }
