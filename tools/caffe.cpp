@@ -34,6 +34,13 @@ DEFINE_string(solver, "",
     "The solver definition protocol buffer text file.");
 DEFINE_string(model, "",
     "The model definition protocol buffer text file.");
+DEFINE_string(phase, "",
+    "Optional; network phase (TRAIN or TEST). Only used for 'time'.");
+DEFINE_int32(level, 0,
+    "Optional; network level.");
+DEFINE_string(stage, "",
+    "Optional; network stages (not to be confused with phase), "
+    "separated by ','.");
 DEFINE_string(snapshot, "",
     "Optional; the snapshot solver state to resume training.");
 DEFINE_string(weights, "",
@@ -101,6 +108,24 @@ static void get_gpus(vector<int>* gpus) {
   }
 }
 
+// Parse phase from flags
+caffe::Phase get_phase_from_flags(caffe::Phase default_value) {
+  if (FLAGS_phase == "")
+    return default_value;
+  if (FLAGS_phase == "TRAIN")
+    return caffe::TRAIN;
+  if (FLAGS_phase == "TEST")
+    return caffe::TEST;
+  LOG(FATAL) << "phase must be \"TRAIN\" or \"TEST\"";
+  return caffe::TRAIN;  // Avoid warning
+}
+
+// Parse stages from flags
+vector<string> get_stages_from_flags() {
+  vector<string> stages;
+  boost::split(stages, FLAGS_stage, boost::is_any_of(","));
+  return stages;
+}
 
 // caffe commands to call by
 //     caffe <command> <args>
@@ -157,9 +182,15 @@ int train() {
   CHECK(!FLAGS_snapshot.size() || !FLAGS_weights.size())
       << "Give a snapshot to resume training or weights to finetune "
       "but not both.";
+  vector<string> stages = get_stages_from_flags();
 
   caffe::SolverParameter solver_param;
   caffe::ReadSolverParamsFromTextFileOrDie(FLAGS_solver, &solver_param);
+
+  solver_param.mutable_train_state()->set_level(FLAGS_level);
+  for (int i = 0; i < stages.size(); i++) {
+    solver_param.mutable_train_state()->add_stage(stages[i]);
+  }
 
   // If the gpus flag is not provided, allow the mode and device to be set
   // in the solver prototxt.
@@ -174,7 +205,6 @@ int train() {
   }
 
   vector<int> gpus;
-  
   get_gpus(&gpus);
   if (gpus.size() == 0) {
     LOG(INFO) << "Use CPU.";
@@ -225,219 +255,13 @@ int train() {
   return 0;
 }
 RegisterBrewFunction(train);
-// Time: benchmark the execution time of a model.
-int time() {
-	CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to time.";
 
-	// Set device id and mode
-	vector<int> gpus;
-	get_gpus(&gpus);
-	if (gpus.size() != 0) {
-		LOG(INFO) << "Use GPU with device ID " << gpus[0];
-		Caffe::SetDevice(gpus[0]);
-		Caffe::set_mode(Caffe::GPU);
-	}
-	else {
-		LOG(INFO) << "Use CPU.";
-		Caffe::set_mode(Caffe::CPU);
-	}
-	// Instantiate the caffe net.
-	Net<float> caffe_net(FLAGS_model, caffe::TRAIN);
 
-	// Do a clean forward and backward pass, so that memory allocation are done
-	// and future iterations will be more stable.
-	LOG(INFO) << "Performing Forward";
-	// Note that for the speed benchmark, we will assume that the network does
-	// not take any input blobs.
-	float initial_loss;
-	caffe_net.Forward(&initial_loss);
-	LOG(INFO) << "Initial loss: " << initial_loss;
-	LOG(INFO) << "Performing Backward";
-	caffe_net.Backward();
-
-	const vector<shared_ptr<Layer<float> > >& layers = caffe_net.layers();
-	const vector<vector<Blob<float>*> >& bottom_vecs = caffe_net.bottom_vecs();
-	const vector<vector<Blob<float>*> >& top_vecs = caffe_net.top_vecs();
-	const vector<vector<bool> >& bottom_need_backward =
-		caffe_net.bottom_need_backward();
-	LOG(INFO) << "*** Benchmark begins ***";
-	LOG(INFO) << "Testing for " << FLAGS_iterations << " iterations.";
-	Timer total_timer;
-	total_timer.Start();
-	Timer forward_timer;
-	Timer backward_timer;
-	Timer timer;
-	std::vector<double> forward_time_per_layer(layers.size(), 0.0);
-	std::vector<double> backward_time_per_layer(layers.size(), 0.0);
-	double forward_time = 0.0;
-	double backward_time = 0.0;
-	for (int j = 0; j < FLAGS_iterations; ++j) {
-		Timer iter_timer;
-		iter_timer.Start();
-		forward_timer.Start();
-		for (int i = 0; i < layers.size(); ++i) {
-			timer.Start();
-			layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
-			forward_time_per_layer[i] += timer.MicroSeconds();
-		}
-		forward_time += forward_timer.MicroSeconds();
-		backward_timer.Start();
-		for (int i = layers.size() - 1; i >= 0; --i) {
-			timer.Start();
-			layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
-				bottom_vecs[i]);
-			backward_time_per_layer[i] += timer.MicroSeconds();
-		}
-		backward_time += backward_timer.MicroSeconds();
-		LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
-			<< iter_timer.MilliSeconds() << " ms.";
-	}
-	LOG(INFO) << "Average time per layer: ";
-	for (int i = 0; i < layers.size(); ++i) {
-		const caffe::string& layername = layers[i]->layer_param().name();
-		LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
-			"\tforward: " << forward_time_per_layer[i] / 1000 /
-			FLAGS_iterations << " ms.";
-		LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
-			"\tbackward: " << backward_time_per_layer[i] / 1000 /
-			FLAGS_iterations << " ms.";
-	}
-	total_timer.Stop();
-	LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
-		FLAGS_iterations << " ms.";
-	LOG(INFO) << "Average Backward pass: " << backward_time / 1000 /
-		FLAGS_iterations << " ms.";
-	LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /
-		FLAGS_iterations << " ms.";
-	LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
-	LOG(INFO) << "*** Benchmark ends ***";
-	return 0;
-}
-RegisterBrewFunction(time);
-using namespace std;
 // Test: score a model.
-template <typename T>
-bool SortScorePairDescend(const pair<float, T>& pair1,
-                          const pair<float, T>& pair2) {
-  return pair1.first > pair2.first;
-}
-
-// Explicit initialization.
-template bool SortScorePairDescend(const pair<float, int>& pair1,
-                                   const pair<float, int>& pair2);
-template bool SortScorePairDescend(const pair<float, pair<int, int> >& pair1,
-                                   const pair<float, pair<int, int> >& pair2);
-void CumSum(const vector<pair<float, int> >& pairs, vector<int>* cumsum) {
-  // Sort the pairs based on first item of the pair.
-  vector<pair<float, int> > sort_pairs = pairs;
-  std::stable_sort(sort_pairs.begin(), sort_pairs.end(),
-                   SortScorePairDescend<int>);
-
-  cumsum->clear();
-  for (int i = 0; i < sort_pairs.size(); ++i) {
-    if (i == 0) {
-      cumsum->push_back(sort_pairs[i].second);
-    } else {
-      cumsum->push_back(cumsum->back() + sort_pairs[i].second);
-    }
-  }
-}
-void ComputeAP(const vector<pair<float, int> >& tp, int num_pos,
-               const vector<pair<float, int> >& fp, string ap_version,
-               vector<float>* prec, vector<float>* rec, float* ap) {
-  const float eps = 1e-6;
-  CHECK_EQ(tp.size(), fp.size()) << "tp must have same size as fp.";
-  const int num = tp.size();
-  // Make sure that tp and fp have complement value.
-  for (int i = 0; i < num; ++i) {
-    CHECK_LE(fabs(tp[i].first - fp[i].first), eps);
-    CHECK_GE(tp[i].second, 0);
-    CHECK_GE(fp[i].second, 0);
-  }
-  prec->clear();
-  rec->clear();
-  *ap = 0;
-  if (tp.size() == 0 || num_pos == 0) {
-    return;
-  }
-
-  // Compute cumsum of tp.
-  vector<int> tp_cumsum;
-  CumSum(tp, &tp_cumsum);
-  CHECK_EQ(tp_cumsum.size(), num);
-
-  // Compute cumsum of fp.
-  vector<int> fp_cumsum;
-  CumSum(fp, &fp_cumsum);
-  CHECK_EQ(fp_cumsum.size(), num);
-
-  // Compute precision.
-  for (int i = 0; i < num; ++i) {
-    prec->push_back(static_cast<float>(tp_cumsum[i]) /
-                    (tp_cumsum[i] + fp_cumsum[i]));
-  }
-
-  // Compute recall.
-  for (int i = 0; i < num; ++i) {
-    CHECK_LE(tp_cumsum[i], num_pos);
-    rec->push_back(static_cast<float>(tp_cumsum[i]) / num_pos);
-  }
-
-  // for (int i = 0; i < num; ++i) {
-  //   std::cout << (*prec)[i] << std::endl;
-  //   std::cout << (*rec)[i] << std::endl;
-  // }
-
-  if (ap_version == "11point") {
-    // VOC2007 style for computing AP.
-    vector<float> max_precs(11, 0.);
-    int start_idx = num - 1;
-    for (int j = 10; j >= 0; --j) {
-      for (int i = start_idx; i >= 0 ; --i) {
-        if ((*rec)[i] < j / 10.) {
-          start_idx = i;
-          if (j > 0) {
-            max_precs[j-1] = max_precs[j];
-          }
-          break;
-        } else {
-          if (max_precs[j] < (*prec)[i]) {
-            max_precs[j] = (*prec)[i];
-          }
-        }
-      }
-    }
-    for (int j = 10; j >= 0; --j) {
-      *ap += max_precs[j] / 11;
-    }
-  } else if (ap_version == "MaxIntegral") {
-    // VOC2012 or ILSVRC style for computing AP.
-    float cur_rec = rec->back();
-    float cur_prec = prec->back();
-    for (int i = num - 2; i >= 0; --i) {
-      cur_prec = std::max<float>((*prec)[i], cur_prec);
-      if (fabs(cur_rec - (*rec)[i]) > eps) {
-        *ap += cur_prec * fabs(cur_rec - (*rec)[i]);
-      }
-      cur_rec = (*rec)[i];
-    }
-    *ap += cur_rec * cur_prec;
-  } else if (ap_version == "Integral") {
-    // Natural integral.
-    float prev_rec = 0.;
-    for (int i = 0; i < num; ++i) {
-      if (fabs((*rec)[i] - prev_rec) > eps) {
-        *ap += (*prec)[i] * fabs((*rec)[i] - prev_rec);
-      }
-      prev_rec = (*rec)[i];
-    }
-  } else {
-    LOG(FATAL) << "Unknown ap_version: " << ap_version;
-  }
-}
 int test() {
   CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to score.";
   CHECK_GT(FLAGS_weights.size(), 0) << "Need model weights to score.";
+  vector<string> stages = get_stages_from_flags();
 
   // Set device id and mode
   vector<int> gpus;
@@ -456,14 +280,9 @@ int test() {
     Caffe::set_mode(Caffe::CPU);
   }
   // Instantiate the caffe net.
-  Net<float> caffe_net(FLAGS_model, caffe::TEST);
+  Net<float> caffe_net(FLAGS_model, caffe::TEST, FLAGS_level, &stages);
   caffe_net.CopyTrainedLayersFrom(FLAGS_weights);
   LOG(INFO) << "Running for " << FLAGS_iterations << " iterations.";
-
-
-  map<int, map<int, vector<pair<float, int> > > > all_true_pos;
-  map<int, map<int, vector<pair<float, int> > > > all_false_pos;
-  map<int, map<int, int> > all_num_pos;
 
   vector<int> test_score_output_id;
   vector<float> test_score;
@@ -475,86 +294,21 @@ int test() {
     loss += iter_loss;
     int idx = 0;
     for (int j = 0; j < result.size(); ++j) {
-      CHECK_EQ(result[j]->width(), 5);
       const float* result_vec = result[j]->cpu_data();
-      int num_det = result[j]->height();
-      for (int k = 0; k < num_det; ++k) {
-        int item_id = static_cast<int>(result_vec[k * 5]);
-        int label = static_cast<int>(result_vec[k * 5 + 1]);
-        if (item_id == -1) {
-          // Special row of storing number of positives for a label.
-          if (all_num_pos[j].find(label) == all_num_pos[j].end()) {
-            all_num_pos[j][label] = static_cast<int>(result_vec[k * 5 + 2]);
-          } else {
-            all_num_pos[j][label] += static_cast<int>(result_vec[k * 5 + 2]);
-          }
+      for (int k = 0; k < result[j]->count(); ++k, ++idx) {
+        const float score = result_vec[k];
+        if (i == 0) {
+          test_score.push_back(score);
+          test_score_output_id.push_back(j);
         } else {
-          // Normal row storing detection status.
-          float score = result_vec[k * 5 + 2];
-          int tp = static_cast<int>(result_vec[k * 5 + 3]);
-          int fp = static_cast<int>(result_vec[k * 5 + 4]);
-          if (tp == 0 && fp == 0) {
-            // Ignore such case. It happens when a detection bbox is matched to
-            // a difficult gt bbox and we don't evaluate on difficult gt bbox.
-            continue;
-          }
-          all_true_pos[j][label].push_back(std::make_pair(score, tp));
-          all_false_pos[j][label].push_back(std::make_pair(score, fp));
+          test_score[idx] += score;
         }
+        const std::string& output_name = caffe_net.blob_names()[
+            caffe_net.output_blob_indices()[j]];
+        LOG(INFO) << "Batch " << i << ", " << output_name << " = " << score;
       }
     }
   }
-
-  for (int i = 0; i < all_true_pos.size(); ++i) {
-    if (all_true_pos.find(i) == all_true_pos.end()) {
-      LOG(FATAL) << "Missing output_blob true_pos: " << i;
-    }
-    const map<int, vector<pair<float, int> > >& true_pos =
-        all_true_pos.find(i)->second;
-    if (all_false_pos.find(i) == all_false_pos.end()) {
-      LOG(FATAL) << "Missing output_blob false_pos: " << i;
-    }
-    const map<int, vector<pair<float, int> > >& false_pos =
-        all_false_pos.find(i)->second;
-    if (all_num_pos.find(i) == all_num_pos.end()) {
-      LOG(FATAL) << "Missing output_blob num_pos: " << i;
-    }
-    const map<int, int>& num_pos = all_num_pos.find(i)->second;
-    map<int, float> APs;
-    float mAP = 0.;
-    // Sort true_pos and false_pos with descend scores.
-    for (map<int, int>::const_iterator it = num_pos.begin();
-         it != num_pos.end(); ++it) {
-      int label = it->first;
-      int label_num_pos = it->second;
-      if (true_pos.find(label) == true_pos.end()) {
-        LOG(WARNING) << "Missing true_pos for label: " << label;
-        continue;
-      }
-      const vector<pair<float, int> >& label_true_pos =
-          true_pos.find(label)->second;
-      if (false_pos.find(label) == false_pos.end()) {
-        LOG(WARNING) << "Missing false_pos for label: " << label;
-        continue;
-      }
-      const vector<pair<float, int> >& label_false_pos =
-          false_pos.find(label)->second;
-      vector<float> prec, rec;
-      ComputeAP(label_true_pos, label_num_pos, label_false_pos,
-                "11point", &prec, &rec, &(APs[label]));
-      mAP += APs[label];
-      if (true) {
-        LOG(INFO) << "class" << label << ": " << APs[label];
-      }
-    }
-    mAP /= num_pos.size();
-    //const int output_blob_index = caffe_net->output_blob_indices()[j];
-    //const string& output_name = caffe_net->blob_names()[output_blob_index];
-    LOG(INFO) << "    Test net output #" << i << ": "<< " = " << mAP;
-  }
-
-
-
   loss /= FLAGS_iterations;
   LOG(INFO) << "Loss: " << loss;
   for (int i = 0; i < test_score.size(); ++i) {
@@ -576,7 +330,96 @@ int test() {
 RegisterBrewFunction(test);
 
 
+// Time: benchmark the execution time of a model.
+int time() {
+  CHECK_GT(FLAGS_model.size(), 0) << "Need a model definition to time.";
+  caffe::Phase phase = get_phase_from_flags(caffe::TRAIN);
+  vector<string> stages = get_stages_from_flags();
 
+  // Set device id and mode
+  vector<int> gpus;
+  get_gpus(&gpus);
+  if (gpus.size() != 0) {
+    LOG(INFO) << "Use GPU with device ID " << gpus[0];
+    Caffe::SetDevice(gpus[0]);
+    Caffe::set_mode(Caffe::GPU);
+  } else {
+    LOG(INFO) << "Use CPU.";
+    Caffe::set_mode(Caffe::CPU);
+  }
+  // Instantiate the caffe net.
+  Net<float> caffe_net(FLAGS_model, phase, FLAGS_level, &stages);
+
+  // Do a clean forward and backward pass, so that memory allocation are done
+  // and future iterations will be more stable.
+  LOG(INFO) << "Performing Forward";
+  // Note that for the speed benchmark, we will assume that the network does
+  // not take any input blobs.
+  float initial_loss;
+  caffe_net.Forward(&initial_loss);
+  LOG(INFO) << "Initial loss: " << initial_loss;
+  LOG(INFO) << "Performing Backward";
+  caffe_net.Backward();
+
+  const vector<shared_ptr<Layer<float> > >& layers = caffe_net.layers();
+  const vector<vector<Blob<float>*> >& bottom_vecs = caffe_net.bottom_vecs();
+  const vector<vector<Blob<float>*> >& top_vecs = caffe_net.top_vecs();
+  const vector<vector<bool> >& bottom_need_backward =
+      caffe_net.bottom_need_backward();
+  LOG(INFO) << "*** Benchmark begins ***";
+  LOG(INFO) << "Testing for " << FLAGS_iterations << " iterations.";
+  Timer total_timer;
+  total_timer.Start();
+  Timer forward_timer;
+  Timer backward_timer;
+  Timer timer;
+  std::vector<double> forward_time_per_layer(layers.size(), 0.0);
+  std::vector<double> backward_time_per_layer(layers.size(), 0.0);
+  double forward_time = 0.0;
+  double backward_time = 0.0;
+  for (int j = 0; j < FLAGS_iterations; ++j) {
+    Timer iter_timer;
+    iter_timer.Start();
+    forward_timer.Start();
+    for (int i = 0; i < layers.size(); ++i) {
+      timer.Start();
+      layers[i]->Forward(bottom_vecs[i], top_vecs[i]);
+      forward_time_per_layer[i] += timer.MicroSeconds();
+    }
+    forward_time += forward_timer.MicroSeconds();
+    backward_timer.Start();
+    for (int i = layers.size() - 1; i >= 0; --i) {
+      timer.Start();
+      layers[i]->Backward(top_vecs[i], bottom_need_backward[i],
+                          bottom_vecs[i]);
+      backward_time_per_layer[i] += timer.MicroSeconds();
+    }
+    backward_time += backward_timer.MicroSeconds();
+    LOG(INFO) << "Iteration: " << j + 1 << " forward-backward time: "
+      << iter_timer.MilliSeconds() << " ms.";
+  }
+  LOG(INFO) << "Average time per layer: ";
+  for (int i = 0; i < layers.size(); ++i) {
+    const caffe::string& layername = layers[i]->layer_param().name();
+    LOG(INFO) << std::setfill(' ') << std::setw(10) << layername <<
+      "\tforward: " << forward_time_per_layer[i] / 1000 /
+      FLAGS_iterations << " ms.";
+    LOG(INFO) << std::setfill(' ') << std::setw(10) << layername  <<
+      "\tbackward: " << backward_time_per_layer[i] / 1000 /
+      FLAGS_iterations << " ms.";
+  }
+  total_timer.Stop();
+  LOG(INFO) << "Average Forward pass: " << forward_time / 1000 /
+    FLAGS_iterations << " ms.";
+  LOG(INFO) << "Average Backward pass: " << backward_time / 1000 /
+    FLAGS_iterations << " ms.";
+  LOG(INFO) << "Average Forward-Backward: " << total_timer.MilliSeconds() /
+    FLAGS_iterations << " ms.";
+  LOG(INFO) << "Total Time: " << total_timer.MilliSeconds() << " ms.";
+  LOG(INFO) << "*** Benchmark ends ***";
+  return 0;
+}
+RegisterBrewFunction(time);
 
 int main(int argc, char** argv) {
   // Print output to stderr (while still logging).
@@ -592,9 +435,7 @@ int main(int argc, char** argv) {
       "  device_query    show GPU diagnostic information\n"
       "  time            benchmark model execution time");
   // Run tool or show usage.
-  
   caffe::GlobalInit(&argc, &argv);
-  //system("pause");
   if (argc == 2) {
 #ifdef WITH_PYTHON_LAYER
     try {
@@ -603,7 +444,6 @@ int main(int argc, char** argv) {
 #ifdef WITH_PYTHON_LAYER
     } catch (bp::error_already_set) {
       PyErr_Print();
-	  
       return 1;
     }
 #endif

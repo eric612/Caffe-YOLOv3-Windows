@@ -1,14 +1,16 @@
 #include <cstdio>
 
+#include <map>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "caffe/solver.hpp"
+#include "caffe/util/bbox_util.hpp"
 #include "caffe/util/format.hpp"
 #include "caffe/util/hdf5.hpp"
 #include "caffe/util/io.hpp"
 #include "caffe/util/upgrade_proto.hpp"
-#include "caffe/util/bbox_util.hpp"
 
 namespace caffe {
 
@@ -39,7 +41,19 @@ Solver<Dtype>::Solver(const string& param_file, const Solver* root_solver)
       requested_early_exit_(false) {
   SolverParameter param;
   ReadSolverParamsFromTextFileOrDie(param_file, &param);
+  CheckType(&param);
   Init(param);
+}
+
+template <typename Dtype>
+void Solver<Dtype>::CheckType(SolverParameter* param) {
+  // Harmonize solver class type with configured type to avoid confusion.
+  if (param->has_type()) {
+    CHECK_EQ(param->type(), this->type())
+        << "Solver type must agree with instantiated solver class.";
+  } else {
+    param->set_type(this->type());
+  }
 }
 
 template <typename Dtype>
@@ -328,12 +342,18 @@ void Solver<Dtype>::TestAll() {
   for (int test_net_id = 0;
        test_net_id < test_nets_.size() && !requested_early_exit_;
        ++test_net_id) {
-    Test(test_net_id);
+    if (param_.eval_type() == "classification") {
+      TestClassification(test_net_id);
+    } else if (param_.eval_type() == "detection") {
+      TestDetection(test_net_id);
+    } else {
+      LOG(FATAL) << "Unknown evaluation type: " << param_.eval_type();
+    }
   }
 }
 
 template <typename Dtype>
-void Solver<Dtype>::Test(const int test_net_id) {
+void Solver<Dtype>::TestClassification(const int test_net_id) {
   CHECK(Caffe::root_solver());
   LOG(INFO) << "Iteration " << iter_
             << ", Testing net (#" << test_net_id << ")";
@@ -343,11 +363,6 @@ void Solver<Dtype>::Test(const int test_net_id) {
   vector<int> test_score_output_id;
   const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];
   Dtype loss = 0;
-
-  map<int, map<int, vector<pair<float, int> > > > all_true_pos;
-  map<int, map<int, vector<pair<float, int> > > > all_false_pos;
-  map<int, map<int, int> > all_num_pos;
-
   for (int i = 0; i < param_.test_iter(test_net_id); ++i) {
     SolverAction::Enum request = GetRequestedAction();
     // Check to see if stoppage of testing/training has been requested.
@@ -367,6 +382,81 @@ void Solver<Dtype>::Test(const int test_net_id) {
     Dtype iter_loss;
     const vector<Blob<Dtype>*>& result =
         test_net->Forward(&iter_loss);
+    if (param_.test_compute_loss()) {
+      loss += iter_loss;
+    }
+    if (i == 0) {
+      for (int j = 0; j < result.size(); ++j) {
+        const Dtype* result_vec = result[j]->cpu_data();
+        for (int k = 0; k < result[j]->count(); ++k) {
+          test_score.push_back(result_vec[k]);
+          test_score_output_id.push_back(j);
+        }
+      }
+    } else {
+      int idx = 0;
+      for (int j = 0; j < result.size(); ++j) {
+        const Dtype* result_vec = result[j]->cpu_data();
+        for (int k = 0; k < result[j]->count(); ++k) {
+          test_score[idx++] += result_vec[k];
+        }
+      }
+    }
+  }
+  if (requested_early_exit_) {
+    LOG(INFO)     << "Test interrupted.";
+    return;
+  }
+  if (param_.test_compute_loss()) {
+    loss /= param_.test_iter(test_net_id);
+    LOG(INFO) << "Test loss: " << loss;
+  }
+  for (int i = 0; i < test_score.size(); ++i) {
+    const int output_blob_index =
+        test_net->output_blob_indices()[test_score_output_id[i]];
+    const string& output_name = test_net->blob_names()[output_blob_index];
+    const Dtype loss_weight = test_net->blob_loss_weights()[output_blob_index];
+    ostringstream loss_msg_stream;
+    const Dtype mean_score = test_score[i] / param_.test_iter(test_net_id);
+    if (loss_weight) {
+      loss_msg_stream << " (* " << loss_weight
+                      << " = " << loss_weight * mean_score << " loss)";
+    }
+    LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "
+              << mean_score << loss_msg_stream.str();
+  }
+}
+
+template <typename Dtype>
+void Solver<Dtype>::TestDetection(const int test_net_id) {
+  CHECK(Caffe::root_solver());
+  LOG(INFO) << "Iteration " << iter_
+            << ", Testing net (#" << test_net_id << ")";
+  CHECK_NOTNULL(test_nets_[test_net_id].get())->
+      ShareTrainedLayersWith(net_.get());
+  map<int, map<int, vector<pair<float, int> > > > all_true_pos;
+  map<int, map<int, vector<pair<float, int> > > > all_false_pos;
+  map<int, map<int, int> > all_num_pos;
+  const shared_ptr<Net<Dtype> >& test_net = test_nets_[test_net_id];
+  Dtype loss = 0;
+  for (int i = 0; i < param_.test_iter(test_net_id); ++i) {
+    SolverAction::Enum request = GetRequestedAction();
+    // Check to see if stoppage of testing/training has been requested.
+    while (request != SolverAction::NONE) {
+        if (SolverAction::SNAPSHOT == request) {
+          Snapshot();
+        } else if (SolverAction::STOP == request) {
+          requested_early_exit_ = true;
+        }
+        request = GetRequestedAction();
+    }
+    if (requested_early_exit_) {
+      // break out of test loop.
+      break;
+    }
+
+    Dtype iter_loss;
+    const vector<Blob<Dtype>*>& result = test_net->Forward(&iter_loss);
     if (param_.test_compute_loss()) {
       loss += iter_loss;
     }
@@ -400,7 +490,14 @@ void Solver<Dtype>::Test(const int test_net_id) {
       }
     }
   }
-
+  if (requested_early_exit_) {
+    LOG(INFO)     << "Test interrupted.";
+    return;
+  }
+  if (param_.test_compute_loss()) {
+    loss /= param_.test_iter(test_net_id);
+    LOG(INFO) << "Test loss: " << loss;
+  }
   for (int i = 0; i < all_true_pos.size(); ++i) {
     if (all_true_pos.find(i) == all_true_pos.end()) {
       LOG(FATAL) << "Missing output_blob true_pos: " << i;
@@ -437,26 +534,18 @@ void Solver<Dtype>::Test(const int test_net_id) {
           false_pos.find(label)->second;
       vector<float> prec, rec;
       ComputeAP(label_true_pos, label_num_pos, label_false_pos,
-                "11point", &prec, &rec, &(APs[label]));
+                param_.ap_version(), &prec, &rec, &(APs[label]));
       mAP += APs[label];
-      if (true) {
+      if (param_.show_per_class_result()) {
         LOG(INFO) << "class" << label << ": " << APs[label];
       }
     }
     mAP /= num_pos.size();
-    //const int output_blob_index = caffe_net->output_blob_indices()[j];
-    //const string& output_name = caffe_net->blob_names()[output_blob_index];
-    LOG(INFO) << "    Test net output #" << i << ": "<< " = " << mAP;
+    const int output_blob_index = test_net->output_blob_indices()[i];
+    const string& output_name = test_net->blob_names()[output_blob_index];
+    LOG(INFO) << "    Test net output #" << i << ": " << output_name << " = "
+              << mAP;
   }
-  if (requested_early_exit_) {
-    LOG(INFO)     << "Test interrupted.";
-    return;
-  }
-  if (param_.test_compute_loss()) {
-    loss /= param_.test_iter(test_net_id);
-    LOG(INFO) << "Test loss: " << loss;
-  }
-
 }
 
 template <typename Dtype>

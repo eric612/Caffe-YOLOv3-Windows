@@ -5,6 +5,7 @@
 
 #include "caffe/common.hpp"
 #include "caffe/data_reader.hpp"
+#include "caffe/layers/annotated_data_layer.hpp"
 #include "caffe/layers/data_layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 
@@ -119,7 +120,6 @@ template <typename T>
 void DataReader<T>::Body::read_one(db::Cursor* cursor, QueuePair* qp) {
   T* t = qp->free_.pop();
   // TODO deserialize in-place instead of copy?
-
   t->ParseFromString(cursor->value());
   qp->full_.push(t);
 

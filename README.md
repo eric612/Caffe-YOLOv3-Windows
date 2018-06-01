@@ -32,78 +32,53 @@ The build step was the same as [MobileNet-SSD-windows](https://github.com/eric61
 > cd $caffe_root/script
 > build_win.cmd 
 ```
-#### GPU Building
-
-config build_win.cmd "CPU_ONLY" = 0
-
-## Usage
-
-### convert model
-
-`cd examples`
-
-1. convert yolo.cfg to yolo.prototxt
-2. convert yolo weights to caffemodel
-
-### Detection
-
-`cd caffe_root`
-1. Download pre-trained [caffmodel](https://drive.google.com/open?id=1WXD6Pi47ryGPiTEtGeN4eDQsplgo35qm) , save at location $caffe_root/models/yolo/
-2. examples\yolo_detection.cmd
-
-If load success , you can see the image window like this 
-
-![alt tag](out/00001.jpg)
-
-### Trainning
-
-There has two ways for training your dataset
-
-1. training with caffe (recommand)
-2. training with darknet project and convert the weights to caffemodel
-
-### training with caffe
 
 
-#### Prepare data option 1(recommand)
-
-Save [lmdb](https://drive.google.com/open?id=15VB2qthaf0s9aYxCSWt8xE2BDvaZPsth) at location $caffe_root\data\yolo\
-
-#### Prepare data option 2
-
-Put your dataset into $caffe_root\data\yolo\VOCdevkit
+### MobilenetYOLO_V2 Demo
 
 ```
-> cd $caffe_root\data\yolo
-> python get_list.py 
+> cd $caffe_root/
+> examples\demo_yolo.cmd
 ```
 
-Check files label_map.txt,trainval.txt,test_2007.txt are all correct 
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/8DelOtsyn4M/0.jpg)](https://www.youtube.com/watch?v=8DelOtsyn4M)
+
+![alt tag](yolo_out.jpg)
+
+### Trainning Prepare
+
+Download [lmdb](https://drive.google.com/open?id=19pBP1NwomDvm43xxgDaRuj_X4KubwuCZ)
+
+Unzip into $caffe_root/ 
+
+Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
+
+### Trainning MobilenetYOLO_V2
+  
+```
+> cd $caffe_root/
+> examples\train_yolo.cmd
+```
+
+
+### Vehicle deploy model 
+
+#### CLASS NAME
 
 ```
-> cd $caffe_root\data\yolo
-> create_dataset.cmd
+char* CLASSES2[6] = { "__background__","bicycle", "car", "motorbike", "person","cones" };
 ```
-
-#### Run training
+### Demo Video MobilenetYOLO_V2
 
 ```
-> cd $caffe_root
-> examples\yolo_train.cmd
+> cd $caffe_root/
+> examples\demo_yolo_custom.cmd
 ```
 
-### Training with darknet project
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/JuCfOI9DrQ4/0.jpg)](https://www.youtube.com/watch?v=JuCfOI9DrQ4)
 
-[yolo-windows](https://github.com/unsky/yolo-for-windows-v2)
+### Future work 
 
-[yolo-windows-my-version](https://github.com/eric612/yolov2-windows)
+1. yolov3 and upsameple layer
 
-### Note
-
-1. There has no data augmentation code inside (ex.hue,rotation) , note the training mAp was bad 
-2. I still try to train a good caffemodel , currently ,the  deploy model was just show how to do training 
-
-### Future
-
-1. Add MobileNet-YOLO
-2. Data augmentation  
+2. customize yolov2 and tiny yolov2

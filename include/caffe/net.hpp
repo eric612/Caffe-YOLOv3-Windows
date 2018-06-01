@@ -25,6 +25,7 @@ class Net {
  public:
   explicit Net(const NetParameter& param, const Net* root_net = NULL);
   explicit Net(const string& param_file, Phase phase,
+      const int level = 0, const vector<string>* stages = NULL,
       const Net* root_net = NULL);
   virtual ~Net() {}
 
@@ -226,13 +227,6 @@ class Net {
   /// @brief return whether NetState state meets NetStateRule rule
   static bool StateMeetsRule(const NetState& state, const NetStateRule& rule,
       const string& layer_name);
-  
-  void RangeInLayers(vector<string>* layer_name, vector<Dtype>* max_in,
-      vector<Dtype>* max_out, vector<Dtype>* max_param);
-  /**
-   * @brief Find the maximum value in a blob.
-   */
-  Dtype findMax(Blob<Dtype>* blob);
 
  protected:
   // Helpers for Init.

@@ -252,7 +252,7 @@ namespace caffe {
 	void caffe_rng_uniform(const int n, const Dtype a, const Dtype b, Dtype* r) {
 		CHECK_GE(n, 0);
 		CHECK(r);
-		if (a > b)//¡PAO13oIOOD?I
+		if (a > b)//·ÀÖ¹³öÏÖÖĞ¶Ï
 		{
 			Dtype c = 0.62433;
 			boost::uniform_real<Dtype> random_distribution(a, caffe_nextafter<Dtype>(c));

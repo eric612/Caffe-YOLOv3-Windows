@@ -9,6 +9,7 @@
 #include "caffe/proto/caffe.pb.h"
 
 namespace caffe {
+
 /**
  * @brief Generate the detection evaluation based on DetectionOutputLayer and
  * ground truth bounding box labels.
@@ -62,6 +63,7 @@ class DetectionEvaluateLayer : public Layer<Dtype> {
   bool use_normalized_bbox_;
 
   bool has_resize_;
+  ResizeParameter resize_param_;
 };
 
 }  // namespace caffe

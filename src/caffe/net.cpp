@@ -28,11 +28,20 @@ Net<Dtype>::Net(const NetParameter& param, const Net* root_net)
 }
 
 template <typename Dtype>
-Net<Dtype>::Net(const string& param_file, Phase phase, const Net* root_net)
+Net<Dtype>::Net(const string& param_file, Phase phase,
+    const int level, const vector<string>* stages,
+    const Net* root_net)
     : root_net_(root_net) {
   NetParameter param;
   ReadNetParamsFromTextFileOrDie(param_file, &param);
+  // Set phase, stages and level
   param.mutable_state()->set_phase(phase);
+  if (stages != NULL) {
+    for (int i = 0; i < stages->size(); i++) {
+      param.mutable_state()->add_stage((*stages)[i]);
+    }
+  }
+  param.mutable_state()->set_level(level);
   Init(param);
 }
 
@@ -368,50 +377,6 @@ bool Net<Dtype>::StateMeetsRule(const NetState& state,
     }
   }
   return true;
-}
-
-template <typename Dtype>
-Dtype Net<Dtype>::findMax(Blob<Dtype>* blob) {
-  const Dtype* data = blob->cpu_data();
-  int cnt = blob->count();
-  Dtype max_val = (Dtype)-10;
-  for (int i = 0; i < cnt; ++i) {
-    max_val = std::max(max_val, (Dtype)fabs(data[i]));
-  }
-  return max_val;
-}
-
-template <typename Dtype>
-void Net<Dtype>::RangeInLayers(vector<string>* layer_name,
-      vector<Dtype>* max_in, vector<Dtype>* max_out, vector<Dtype>* max_param) {
-  // Initialize vector elements, if needed.
-  if(layer_name->size()==0) {
-    for (int layer_id = 0; layer_id < layers_.size(); ++layer_id) {
-      if (strcmp(layers_[layer_id]->type(), "Convolution") == 0 ||
-          strcmp(layers_[layer_id]->type(), "InnerProduct") == 0) {
-        layer_name->push_back(this->layer_names()[layer_id]);
-        max_in->push_back(0);
-        max_out->push_back(0);
-        max_param->push_back(0);
-      }
-    }
-  }
-  // Find maximal values.
-  int index = 0;
-  Dtype max_val;
-  for (int layer_id = 0; layer_id < layers_.size(); ++layer_id) {
-    if (strcmp(layers_[layer_id]->type(), "Convolution") == 0 ||
-          strcmp(layers_[layer_id]->type(), "InnerProduct") == 0) {
-      max_val = findMax(bottom_vecs_[layer_id][0]);
-      max_in->at(index) = std::max(max_in->at(index), max_val);
-      max_val = findMax(top_vecs_[layer_id][0]);
-      max_out->at(index) = std::max(max_out->at(index), max_val);
-      // Consider the weights only, ignore the bias
-      max_val = findMax(&(*layers_[layer_id]->blobs()[0]));
-      max_param->at(index) = std::max(max_param->at(index), max_val);
-      index++;
-    }
-  }
 }
 
 // Helper for Net::Init: add a new top blob to the net.

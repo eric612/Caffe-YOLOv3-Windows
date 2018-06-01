@@ -1,0 +1,34 @@
+train_net: "models/yolov2/train_custom.prototxt"
+#test_net: "models/MobileNetV2/test.prototxt"
+#test_iter: 673
+#test_interval: 10000
+base_lr: 0.0005
+display: 10
+max_iter: 30000
+lr_policy: "multifixed"
+gamma: 0.5
+weight_decay: 0.000004
+snapshot: 1000
+snapshot_prefix: "models/yolov2/MobileNetYOLO-V2_custom"
+solver_mode: GPU
+debug_info: false
+snapshot_after_train: true
+test_initialization: false
+average_loss: 10
+#stepvalue: 20000
+#stepvalue: 40000
+#stepvalue: 45000
+
+stagelr: 0.0005
+stagelr: 0.001
+stagelr: 0.0005
+stagelr: 0.0001
+stageiter: 200
+stageiter: 10000
+stageiter: 20000
+stageiter: 30000
+
+iter_size: 2
+type: "RMSProp"
+eval_type: "detection"
+ap_version: "11point"
