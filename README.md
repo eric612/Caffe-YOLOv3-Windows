@@ -45,13 +45,6 @@ Download [weights](https://drive.google.com/file/d/17w7oZBbTHPI5TMuD9DKQzkPhSVDa
 
 ![alt tag](out/00003.jpg)
 
-### Darknet YOLOv2 Training
-
-```
-> cd $caffe_root/
-> examples\train_yolo_darknet.cmd
-```
-
 ### MobilenetYOLO_V2 Demo
 
 ```
@@ -63,6 +56,7 @@ Download [weights](https://drive.google.com/file/d/17w7oZBbTHPI5TMuD9DKQzkPhSVDa
 
 ![alt tag](yolo_out.jpg)
 
+
 ### Trainning Prepare
 
 Download [lmdb](https://drive.google.com/open?id=19pBP1NwomDvm43xxgDaRuj_X4KubwuCZ)
@@ -71,7 +65,16 @@ Unzip into $caffe_root/
 
 Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
 
-### Trainning MobilenetYOLO_V2
+
+#### Darknet YOLOv2 Training
+
+```
+> cd $caffe_root/
+> examples\train_yolo_darknet.cmd
+```
+
+
+#### Trainning MobilenetYOLO_V2
   
 ```
 > cd $caffe_root/
