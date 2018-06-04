@@ -66,7 +66,7 @@ Unzip into $caffe_root/
 Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
 
 
-### Darknet YOLOv2 Training
+### Training Darknet YOLOv2 
 
 ```
 > cd $caffe_root/
