@@ -8,7 +8,7 @@ max_iter: 50000
 lr_policy: "multifixed"
 gamma: 0.5
 weight_decay: 0.000004
-snapshot: 1000
+snapshot: 5000
 snapshot_prefix: "models/yolov2/yolov2_deploy"
 solver_mode: GPU
 debug_info: false

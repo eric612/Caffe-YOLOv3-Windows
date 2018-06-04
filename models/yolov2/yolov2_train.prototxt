@@ -39,6 +39,10 @@ layer {
       saturation_upper: 1.5
       random_order_prob: 0.0
     }
+	expand_param {
+      prob: 0.5
+      max_expand_ratio: 1.3
+    }
   }
   data_param {
     source: "examples/VOC0712/VOC0712_trainval_lmdb"

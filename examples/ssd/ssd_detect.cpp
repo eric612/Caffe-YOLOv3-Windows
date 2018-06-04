@@ -414,6 +414,8 @@ int main(int argc, char** argv) {
 			  }
 		  }
 		  cv::imshow("show", img);
+		  sprintf(buf, "out//%05d.jpg", k);
+		  cv::imwrite(buf, img);
 		  cv::waitKey(wait_time);
 		  data.push_back(img);
 	  }

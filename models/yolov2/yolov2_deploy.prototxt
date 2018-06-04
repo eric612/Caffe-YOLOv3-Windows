@@ -1469,7 +1469,7 @@ layer {
     num_classes: 20
     coords: 4
     confidence_threshold: 0.6
-	nms_threshold: 0.45
+	nms_threshold: 0.3
 
     biases: 1.08
     biases: 1.19
