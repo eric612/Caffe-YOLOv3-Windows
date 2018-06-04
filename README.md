@@ -32,7 +32,7 @@ The build step was the same as [MobileNet-SSD-windows](https://github.com/eric61
 > cd $caffe_root/script
 > build_win.cmd 
 ```
-### Darknet yolov2
+### Darknet YOLOv2 Demo
 
 [graph](http://ethereon.github.io/netscope/#/gist/c062fa088c0f4cc58649dc560df27875)
 
@@ -44,6 +44,13 @@ Download [weights](https://drive.google.com/file/d/17w7oZBbTHPI5TMuD9DKQzkPhSVDa
 ```
 
 ![alt tag](out/00003.jpg)
+
+### Darknet YOLOv2 Training
+
+```
+> cd $caffe_root/
+> examples\train_yolo_darknet.cmd
+```
 
 ### MobilenetYOLO_V2 Demo
 
