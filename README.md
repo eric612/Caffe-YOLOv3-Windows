@@ -43,7 +43,7 @@ Download [weights](https://drive.google.com/file/d/17w7oZBbTHPI5TMuD9DKQzkPhSVDa
 > examples\demo_yolo_darknet.cmd
 ```
 
-![alt tag](out\00003.jpg.jpg)
+![alt tag](out/00003.jpg.jpg)
 
 ### MobilenetYOLO_V2 Demo
 
