@@ -205,7 +205,10 @@ void YoloDetectionOutputLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom
   top_shape.push_back(7);
   top[0]->Reshape(top_shape);
 }
-
+template <typename Dtype>
+bool BoxSortDecendScore(const PredictionResult<Dtype>& box1, const PredictionResult<Dtype>& box2) {
+	return box1.confidence> box2.confidence;
+}
 template <typename Dtype>
 void YoloDetectionOutputLayer<Dtype>::Forward_cpu(
     const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
@@ -252,6 +255,7 @@ void YoloDetectionOutputLayer<Dtype>::Forward_cpu(
 			}
 		}
 	}
+	std::sort(predicts.begin(), predicts.end(), BoxSortDecendScore<Dtype>);
     vector<int> idxes;
     int num_kept = 0;
     if(predicts.size() > 0){
@@ -265,7 +269,7 @@ void YoloDetectionOutputLayer<Dtype>::Forward_cpu(
     Dtype* top_data;
   
   if (num_kept == 0) {
-    LOG(INFO) << "Couldn't find any detections";
+    DLOG(INFO) << "Couldn't find any detections";
     top_shape[2] = swap.num();
     top[0]->Reshape(top_shape);
     top_data = top[0]->mutable_cpu_data();
@@ -280,7 +284,7 @@ void YoloDetectionOutputLayer<Dtype>::Forward_cpu(
     top[0]->Reshape(top_shape);
     top_data = top[0]->mutable_cpu_data();
     for (int i = 0; i < num_kept; i++){
-      top_data[i*7] = 1;                              //Image_Id
+      top_data[i*7] = 0;                              //Image_Id
       top_data[i*7+1] = predicts[idxes[i]].classType + 1; //label
       top_data[i*7+2] = predicts[idxes[i]].confidence; //confidence
 	  float left = (predicts[idxes[i]].x - predicts[idxes[i]].w / 2.);
@@ -292,7 +296,7 @@ void YoloDetectionOutputLayer<Dtype>::Forward_cpu(
       top_data[i*7+4] = top;
       top_data[i*7+5] = right;
       top_data[i*7+6] = bot;
-	  LOG(INFO) << "Detection box"  << "," << predicts[idxes[i]].classType << "," << predicts[idxes[i]].x << "," << predicts[idxes[i]].y << "," << predicts[idxes[i]].w << "," << predicts[idxes[i]].h;
+	  DLOG(INFO) << "Detection box"  << "," << predicts[idxes[i]].classType << "," << predicts[idxes[i]].x << "," << predicts[idxes[i]].y << "," << predicts[idxes[i]].w << "," << predicts[idxes[i]].h;
     }
 
   }

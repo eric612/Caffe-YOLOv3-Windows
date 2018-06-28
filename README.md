@@ -1,5 +1,15 @@
 # caffe-yolov2-windows
 
+## Linux Version
+
+[MobileNet-YOLO](https://github.com/eric612/MobileNet-YOLO)
+
+Network|mAP|Download|Download
+:---:|:---:|:---:|:---:
+MobileNet-YOLO-Lite|0.66|[train](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_train.prototxt)|[deploy](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_test.prototxt)
+
+Linux version fixed some bugs from this project . If I have time and machine(?) , I will update this project later , please be patient
+
 ## Reference
 
 > https://github.com/eric612/Vehicle-Detection
