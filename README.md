@@ -4,7 +4,9 @@
 
 [MobileNet-YOLO](https://github.com/eric612/MobileNet-YOLO)
 
-Network|mAP|Download|Download
+A caffe implementation of MobileNet-YOLO (YOLOv2 base) detection network, with pretrained weights on VOC0712 and mAP=0.667
+
+Network|mAP|Link|Link
 :---:|:---:|:---:|:---:
 MobileNet-YOLO-Lite|0.66|[train](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_train.prototxt)|[deploy](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_test.prototxt)
 
