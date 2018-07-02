@@ -4,11 +4,12 @@
 
 [MobileNet-YOLO](https://github.com/eric612/MobileNet-YOLO)
 
-A caffe implementation of MobileNet-YOLO (YOLOv2 base) detection network, with pretrained weights on VOC0712 and mAP=0.667
+A caffe implementation of MobileNet-YOLO (YOLOv2 base) detection network, with pretrained weights on VOC0712 and mAP=0.702
 
-Network|mAP|Link|Link
-:---:|:---:|:---:|:---:
-MobileNet-YOLO-Lite|0.66|[train](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_train.prototxt)|[deploy](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_test.prototxt)
+Network|mAP|Download|Download|NetScope
+:---:|:---:|:---:|:---:|:---:
+MobileNet-YOLO-Lite|0.667|[train](models/MobileNet/mobilenet_iter_73000.caffemodel)|[deploy](models/yolov2/mobilenet_yolo_deploy_iter_95000.caffemodel)|[graph](http://ethereon.github.io/netscope/#/gist/11229dc092ef68d3b37f37ce4d9cdec8)
+MobileNet-YOLO|0.702|[train](models/MobileNet/mobilenet_iter_73000.caffemodel)|[deploy](models/yolov2/mobilenet_yolo_deploy_iter_57000.caffemodel)|[graph](http://ethereon.github.io/netscope/#/gist/52f298d84f8fa4ebb2bb94767fa6ca88)
 
 Linux version fixed some bugs from this project . If I have time and machine(?) , I will update this project later , please be patient
 
