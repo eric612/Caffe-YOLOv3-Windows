@@ -37,7 +37,7 @@ include(cmake/WindowsCreateLinkHeader.cmake)
 include(cmake/TargetResolvePrerequesites.cmake)
 
 # ---[ Options
-caffe_option(CPU_ONLY  "Build Caffe without CUDA support" ON) # TODO: rename to USE_CUDA
+caffe_option(CPU_ONLY  "Build Caffe without CUDA support" OFF) # TODO: rename to USE_CUDA
 caffe_option(USE_CUDNN "Build Caffe with cuDNN library support" OFF IF NOT CPU_ONLY)
 caffe_option(USE_NCCL "Build Caffe with NCCL library support" OFF)
 if(MSVC)
@@ -158,3 +158,4 @@ caffe_print_configuration_summary()
 
 # ---[ Export configs generation
 caffe_generate_export_configs()
+

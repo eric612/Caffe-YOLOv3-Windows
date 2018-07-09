@@ -5,7 +5,7 @@
 if DEFINED APPVEYOR (
     echo Setting Appveyor defaults
     if NOT DEFINED MSVC_VERSION set MSVC_VERSION=14
-    if NOT DEFINED WITH_NINJA set WITH_NINJA=0
+    if NOT DEFINED WITH_NINJA set WITH_NINJA=1
     if NOT DEFINED CPU_ONLY set CPU_ONLY=1
     if NOT DEFINED CUDA_ARCH_NAME set CUDA_ARCH_NAME=Auto
     if NOT DEFINED CMAKE_CONFIG set CMAKE_CONFIG=Release
@@ -22,11 +22,11 @@ if DEFINED APPVEYOR (
 
     :: Set python 2.7 with conda as the default python
     if !PYTHON_VERSION! EQU 2 (
-        set CONDA_ROOT=D:\Develop\WinPython2.7\python-2.7.10.amd64
+        set CONDA_ROOT=C:\Miniconda-x64
     )
     :: Set python 3.5 with conda as the default python
     if !PYTHON_VERSION! EQU 3 (
-        set CONDA_ROOT=D:\Develop\Anaconda3
+        set CONDA_ROOT=C:\Miniconda35-x64
     )
     set PATH=!CONDA_ROOT!;!CONDA_ROOT!\Scripts;!CONDA_ROOT!\Library\bin;!PATH!
 
@@ -73,7 +73,7 @@ if DEFINED APPVEYOR (
     :: Change to 1 to use Ninja generator (builds much faster)
     if NOT DEFINED WITH_NINJA set WITH_NINJA=0
     :: Change to 1 to build caffe without CUDA support
-    if NOT DEFINED CPU_ONLY set CPU_ONLY=0
+    if NOT DEFINED CPU_ONLY set CPU_ONLY=1
     :: Change to generate CUDA code for one of the following GPU architectures
     :: [Fermi  Kepler  Maxwell  Pascal  All]
     if NOT DEFINED CUDA_ARCH_NAME set CUDA_ARCH_NAME=Auto
@@ -84,9 +84,9 @@ if DEFINED APPVEYOR (
     :: Change to 1 to build a caffe.dll
     if NOT DEFINED CMAKE_BUILD_SHARED_LIBS set CMAKE_BUILD_SHARED_LIBS=0
     :: Change to 3 if using python 3.5 (only 2.7 and 3.5 are supported)
-    if NOT DEFINED PYTHON_VERSION set PYTHON_VERSION=3
+    if NOT DEFINED PYTHON_VERSION set PYTHON_VERSION=2
     :: Change these options for your needs.
-    if NOT DEFINED BUILD_PYTHON set BUILD_PYTHON=0
+    if NOT DEFINED BUILD_PYTHON set BUILD_PYTHON=1
     if NOT DEFINED BUILD_PYTHON_LAYER set BUILD_PYTHON_LAYER=1
     if NOT DEFINED BUILD_MATLAB set BUILD_MATLAB=0
     :: If python is on your path leave this alone
@@ -222,9 +222,7 @@ if !RUN_TESTS! EQU 1 (
 
 if %RUN_INSTALL% EQU 1 (
     cmake --build . --target install --config %CMAKE_CONFIG%
-	
 )
-cd ..
-copy opencv_ffmpeg310_64.dll build\examples\ssd\Release\opencv_ffmpeg310_64.dll
+
 popd
 @endlocal

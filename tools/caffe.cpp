@@ -195,6 +195,7 @@ int train() {
   // If the gpus flag is not provided, allow the mode and device to be set
   // in the solver prototxt.
   if (FLAGS_gpu.size() == 0
+      && solver_param.has_solver_mode()
       && solver_param.solver_mode() == caffe::SolverParameter_SolverMode_GPU) {
       if (solver_param.has_device_id()) {
           FLAGS_gpu = "" +
@@ -232,6 +233,13 @@ int train() {
         GetRequestedAction(FLAGS_sigint_effect),
         GetRequestedAction(FLAGS_sighup_effect));
 
+  if (FLAGS_snapshot.size()) {
+    solver_param.clear_weights();
+  } else if (FLAGS_weights.size()) {
+    solver_param.clear_weights();
+    solver_param.add_weights(FLAGS_weights);
+  }
+
   shared_ptr<caffe::Solver<float> >
       solver(caffe::SolverRegistry<float>::CreateSolver(solver_param));
 
@@ -244,11 +252,15 @@ int train() {
     CopyLayers(solver.get(), FLAGS_weights);
   }
 
+  LOG(INFO) << "Starting Optimization";
   if (gpus.size() > 1) {
-    caffe::P2PSync<float> sync(solver, NULL, solver->param());
-    sync.Run(gpus);
+#ifdef USE_NCCL
+    caffe::NCCL<float> nccl(solver);
+    nccl.Run(gpus, FLAGS_snapshot.size() > 0 ? FLAGS_snapshot.c_str() : NULL);
+#else
+    LOG(FATAL) << "Multi-GPU execution not available - rebuild with USE_NCCL";
+#endif
   } else {
-    LOG(INFO) << "Starting Optimization";
     solver->Solve();
   }
   LOG(INFO) << "Optimization Done.";

@@ -4,6 +4,7 @@
 #include <boost/python.hpp>
 #endif
 #include <string>
+#include <vector>
 
 #include "caffe/layer.hpp"
 #include "caffe/layer_factory.hpp"
@@ -12,15 +13,11 @@
 #include "caffe/layers/bias_layer.hpp"
 #include "caffe/layers/concat_layer.hpp"
 #include "caffe/layers/conv_layer.hpp"
-#include "caffe/layers/detection_output_layer.hpp"
 #include "caffe/layers/detection_evaluate_layer.hpp"
 #include "caffe/layers/flatten_layer.hpp"
 #include "caffe/layers/input_layer.hpp"
 #include "caffe/layers/lrn_layer.hpp"
-#include "caffe/layers/multibox_loss_layer.hpp"
-#include "caffe/layers/permute_layer.hpp"
 #include "caffe/layers/pooling_layer.hpp"
-#include "caffe/layers/prior_box_layer.hpp"
 #include "caffe/layers/relu_layer.hpp"
 #include "caffe/layers/reshape_layer.hpp"
 #include "caffe/layers/scale_layer.hpp"
@@ -35,6 +32,7 @@
 #include "caffe/layers/yolo_detection_output_layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/layers/reorg_layer.hpp"
+#include "caffe/layers/depthwise_conv_layer.hpp"
 #ifdef USE_CUDNN
 #include "caffe/layers/cudnn_conv_layer.hpp"
 #include "caffe/layers/cudnn_lcn_layer.hpp"
@@ -52,47 +50,46 @@
 
 namespace caffe {
 
-
 template <typename Dtype>
 typename LayerRegistry<Dtype>::CreatorRegistry&
-	LayerRegistry<Dtype>::Registry() {
-	static CreatorRegistry* g_registry_ = new CreatorRegistry();
-	return *g_registry_;
+LayerRegistry<Dtype>::Registry() {
+  static CreatorRegistry* g_registry_ = new CreatorRegistry();
+  return *g_registry_;
 }
 
 // Adds a creator.
 template <typename Dtype>
 void LayerRegistry<Dtype>::AddCreator(const string& type, Creator creator) {
-	CreatorRegistry& registry = Registry();
-	CHECK_EQ(registry.count(type), 0) << "Layer type " << type
-		<< " already registered.";
-	registry[type] = creator;
+  CreatorRegistry& registry = Registry();
+  CHECK_EQ(registry.count(type), 0) << "Layer type " << type
+                                    << " already registered.";
+  registry[type] = creator;
 }
 
 // Get a layer using a LayerParameter.
 template <typename Dtype>
 shared_ptr<Layer<Dtype> > LayerRegistry<Dtype>::CreateLayer(
-	const LayerParameter& param) {
-	if (Caffe::root_solver()) {
-		LOG(INFO) << "Creating layer " << param.name();
-	}
-	const string& type = param.type();
-	CreatorRegistry& registry = Registry();
-	CHECK_EQ(registry.count(type), 1)
-		<< "Unknown layer type: " << type
-		<< " (known types: " << LayerTypeListString() << ")";
-	return registry[type](param);
+    const LayerParameter& param) {
+  if (Caffe::root_solver()) {
+    LOG(INFO) << "Creating layer " << param.name();
+  }
+  const string& type = param.type();
+  CreatorRegistry& registry = Registry();
+  CHECK_EQ(registry.count(type), 1)
+      << "Unknown layer type: " << type
+      << " (known types: " << LayerTypeListString() << ")";
+  return registry[type](param);
 }
 
 template <typename Dtype>
 vector<string> LayerRegistry<Dtype>::LayerTypeList() {
-	CreatorRegistry& registry = Registry();
-	vector<string> layer_types;
-	for (typename CreatorRegistry::iterator iter = registry.begin();
-	iter != registry.end(); ++iter) {
-		layer_types.push_back(iter->first);
-	}
-	return layer_types;
+  CreatorRegistry& registry = Registry();
+  vector<string> layer_types;
+  for (typename CreatorRegistry::iterator iter = registry.begin();
+       iter != registry.end(); ++iter) {
+    layer_types.push_back(iter->first);
+  }
+  return layer_types;
 }
 
 // Layer registry should never be instantiated - everything is done with its
@@ -102,24 +99,24 @@ LayerRegistry<Dtype>::LayerRegistry() {}
 
 template <typename Dtype>
 string LayerRegistry<Dtype>::LayerTypeListString() {
-	vector<string> layer_types = LayerTypeList();
-	string layer_types_str;
-	for (vector<string>::iterator iter = layer_types.begin();
-	iter != layer_types.end(); ++iter) {
-		if (iter != layer_types.begin()) {
-			layer_types_str += ", ";
-		}
-		layer_types_str += *iter;
-	}
-	return layer_types_str;
+  vector<string> layer_types = LayerTypeList();
+  string layer_types_str;
+  for (vector<string>::iterator iter = layer_types.begin();
+       iter != layer_types.end(); ++iter) {
+    if (iter != layer_types.begin()) {
+      layer_types_str += ", ";
+    }
+    layer_types_str += *iter;
+  }
+  return layer_types_str;
 }
 
 template <typename Dtype>
 LayerRegisterer<Dtype>::LayerRegisterer(
-	const string& type,
-	shared_ptr<Layer<Dtype> >(*creator)(const LayerParameter&)) {
-	// LOG(INFO) << "Registering layer type: " << type;
-	LayerRegistry<Dtype>::AddCreator(type, creator);
+    const string& type,
+    shared_ptr<Layer<Dtype> > (*creator)(const LayerParameter&)) {
+  // LOG(INFO) << "Registering layer type: " << type;
+  LayerRegistry<Dtype>::AddCreator(type, creator);
 }
 
 INSTANTIATE_CLASS(LayerRegistry);
@@ -196,12 +193,6 @@ shared_ptr<Layer<Dtype> > GetInputLayer(const LayerParameter& param) {
 REGISTER_LAYER_CREATOR(Input, GetInputLayer);
 
 
-// Get DetectionOutput layer according to engine.
-template <typename Dtype>
-shared_ptr<Layer<Dtype> > GetDetectionOutputLayer(const LayerParameter& param) {
-	return shared_ptr<Layer<Dtype> >(new DetectionOutputLayer<Dtype>(param));
-}
-REGISTER_LAYER_CREATOR(DetectionOutput, GetDetectionOutputLayer);
 
 // Get DetectionOutput layer according to engine.
 template <typename Dtype>
@@ -210,12 +201,7 @@ shared_ptr<Layer<Dtype> > GetYoloDetectionOutputLayer(const LayerParameter& para
 }
 REGISTER_LAYER_CREATOR(YoloDetectionOutput, GetYoloDetectionOutputLayer);
 
-// Get MultiBoxLoss layer according to engine.
-template <typename Dtype>
-shared_ptr<Layer<Dtype> > GetMultiBoxLossLayer(const LayerParameter& param) {
-	return shared_ptr<Layer<Dtype> >(new MultiBoxLossLayer<Dtype>(param));
-}
-REGISTER_LAYER_CREATOR(MultiBoxLoss, GetMultiBoxLossLayer);
+
 
 // Get RegionLoss layer according to engine.
 template <typename Dtype>
@@ -224,19 +210,7 @@ shared_ptr<Layer<Dtype> > GetRegionLossLayer(const LayerParameter& param) {
 }
 REGISTER_LAYER_CREATOR(RegionLoss, GetRegionLossLayer);
 // Get Permute layer according to engine.
-template <typename Dtype>
-shared_ptr<Layer<Dtype> > GetPermuteLayer(const LayerParameter& param) {
-	return shared_ptr<Layer<Dtype> >(new PermuteLayer<Dtype>(param));
-}
-REGISTER_LAYER_CREATOR(Permute, GetPermuteLayer);
 
-
-// Get PriorBox layer according to engine.
-template <typename Dtype>
-shared_ptr<Layer<Dtype> > GetPriorBoxLayer(const LayerParameter& param) {
-	return shared_ptr<Layer<Dtype> >(new PriorBoxLayer<Dtype>(param));
-}
-REGISTER_LAYER_CREATOR(PriorBox, GetPriorBoxLayer);
 
 
 
@@ -324,6 +298,48 @@ shared_ptr<Layer<Dtype> > GetConvolutionLayer(
 
 REGISTER_LAYER_CREATOR(Convolution, GetConvolutionLayer);
 
+
+// Get convolution layer according to engine.
+template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetDepthwiseConvolutionLayer(
+	const LayerParameter& param) {
+	ConvolutionParameter conv_param = param.convolution_param();
+	ConvolutionParameter_Engine engine = conv_param.engine();
+#ifdef USE_CUDNN
+	bool use_dilation = false;
+	for (int i = 0; i < conv_param.dilation_size(); ++i) {
+		if (conv_param.dilation(i) > 1) {
+			use_dilation = true;
+		}
+	}
+#endif
+	if (engine == ConvolutionParameter_Engine_DEFAULT) {
+		engine = ConvolutionParameter_Engine_CAFFE;
+#ifdef USE_CUDNN
+		if (!use_dilation) {
+			engine = ConvolutionParameter_Engine_CUDNN;
+		}
+#endif
+	}
+	if (engine == ConvolutionParameter_Engine_CAFFE) {
+		return shared_ptr<Layer<Dtype> >(new DepthwiseConvolutionLayer<Dtype>(param));
+#ifdef USE_CUDNN
+	}
+	else if (engine == ConvolutionParameter_Engine_CUDNN) {
+		if (use_dilation) {
+			LOG(FATAL) << "CuDNN doesn't support the dilated convolution at Layer "
+				<< param.name();
+		}
+		return shared_ptr<Layer<Dtype> >(new CuDNNConvolutionLayer<Dtype>(param));
+#endif
+	}
+	else {
+		LOG(FATAL) << "Layer " << param.name() << " has unknown engine.";
+		throw;  // Avoids missing return warning
+	}
+}
+
+REGISTER_LAYER_CREATOR(DepthwiseConvolution, GetDepthwiseConvolutionLayer);
 // Get pooling layer according to engine.
 template <typename Dtype>
 shared_ptr<Layer<Dtype> > GetPoolingLayer(const LayerParameter& param) {

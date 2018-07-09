@@ -11,7 +11,8 @@
 #include "caffe/layers/annotated_data_layer.hpp"
 #include "caffe/util/benchmark.hpp"
 #include "caffe/util/sampler.hpp"
-
+#include "caffe/util/im_transforms.hpp"
+const float prob_eps = 0.01;
 namespace caffe {
 
 template <typename Dtype>
@@ -41,8 +42,8 @@ void AnnotatedDataLayer<Dtype>::DataLayerSetUp(
   // Make sure dimension is consistent within batch.
   const TransformationParameter& transform_param =
     this->layer_param_.transform_param();
-  if (transform_param.has_resize_param()) {
-    if (transform_param.resize_param().resize_mode() ==
+  if (transform_param.resize_param_size()) {
+    if (transform_param.resize_param(0).resize_mode() ==
         ResizeParameter_Resize_mode_FIT_SMALL_SIZE) {
       CHECK_EQ(batch_size, 1)
         << "Only support batch size of 1 for FIT_SMALL_SIZE.";
@@ -54,7 +55,7 @@ void AnnotatedDataLayer<Dtype>::DataLayerSetUp(
 
   // Use data_transformer to infer the expected blob shape from anno_datum.
   vector<int> top_shape =
-      this->data_transformer_->InferBlobShape(anno_datum.datum());
+      this->data_transformer_->InferBlobShape(anno_datum.datum(),0);
   this->transformed_data_.Reshape(top_shape);
   // Reshape top[0] and prefetch_data according to the batch_size.
   top_shape[0] = batch_size;
@@ -136,13 +137,34 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
     this->layer_param_.transform_param();
   AnnotatedDatum& anno_datum = *(reader_.full().peek());
   // Use data_transformer to infer the expected blob shape from anno_datum.
+  int num_resize_policies = transform_param.resize_param_size();
+  int policy_num = 0;
+  if (num_resize_policies > 0) {
+	  std::vector<float> probabilities;
+	  float prob_sum = 0;
+	  for (int i = 0; i < num_resize_policies; i++) {
+		  const float prob = transform_param.resize_param(i).prob();
+		  CHECK_GE(prob, 0);
+		  CHECK_LE(prob, 1);
+		  prob_sum += prob;
+		  probabilities.push_back(prob);
+	  }
+	  CHECK_NEAR(prob_sum, 1.0, prob_eps);
+	  policy_num = roll_weighted_die(probabilities);
+  }
+  else {
+
+  }
   vector<int> top_shape =
-      this->data_transformer_->InferBlobShape(anno_datum.datum());
+      this->data_transformer_->InferBlobShape(anno_datum.datum(), policy_num);
   this->transformed_data_.Reshape(top_shape);
   // Reshape batch according to the batch_size.
   top_shape[0] = batch_size;
   batch->data_.Reshape(top_shape);
 
+  for (int i = 0; i < this->PREFETCH_COUNT; ++i) {
+    this->prefetch_[i].data_.Reshape(top_shape);
+  }
   Dtype* top_data = batch->data_.mutable_cpu_data();
   Dtype* top_label = NULL;  // suppress warnings about uninitialized variables
   if (this->output_labels_ && !has_anno_type_) {
@@ -206,18 +228,21 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
       sampled_datum = expand_datum;
     }
     CHECK(sampled_datum != NULL);
-    timer.Start();
+
     vector<int> shape =
-        this->data_transformer_->InferBlobShape(sampled_datum->datum());
-    if (transform_param.has_resize_param()) {
-      if (transform_param.resize_param().resize_mode() ==
+        this->data_transformer_->InferBlobShape(sampled_datum->datum(), policy_num);
+
+	//LOG(INFO) << shape[2] << "," << shape[3];
+    if (transform_param.resize_param_size()) {
+      if (transform_param.resize_param(policy_num).resize_mode() ==
           ResizeParameter_Resize_mode_FIT_SMALL_SIZE) {
         this->transformed_data_.Reshape(shape);
         batch->data_.Reshape(shape);
         top_data = batch->data_.mutable_cpu_data();
       } else {
-        CHECK(std::equal(top_shape.begin() + 1, top_shape.begin() + 4,
-              shape.begin() + 1));
+		  //LOG(INFO) << top_shape;
+        //CHECK(std::equal(top_shape.begin() + 1, top_shape.begin() + 4,
+        //      shape.begin() + 1));
       }
     } else {
       CHECK(std::equal(top_shape.begin() + 1, top_shape.begin() + 4,
@@ -239,9 +264,10 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
         }
         // Transform datum and annotation_group at the same time
         transformed_anno_vec.clear();
+		//LOG(INFO) << "test";
         this->data_transformer_->Transform(*sampled_datum,
                                            &(this->transformed_data_),
-                                           &transformed_anno_vec);
+                                           &transformed_anno_vec, policy_num);
         if (anno_type_ == AnnotatedDatum_AnnotationType_BBOX) {
           // Count the number of bboxes.
           for (int g = 0; g < transformed_anno_vec.size(); ++g) {
@@ -287,9 +313,17 @@ void AnnotatedDataLayer<Dtype>::load_batch(Batch<Dtype>* batch) {
 	  }
       if (num_bboxes == 0) {
         // Store all -1 in the label.
-        label_shape[2] = 1;
-        batch->label_.Reshape(label_shape);
-        caffe_set<Dtype>(8, -1, batch->label_.mutable_cpu_data());
+		if (yolo_data_type_ == 1) {
+			label_shape[2] = 30;
+			batch->label_.Reshape(label_shape);
+			caffe_set<Dtype>(8, 0, batch->label_.mutable_cpu_data());
+		}
+		else {
+			label_shape[2] = 1;
+			batch->label_.Reshape(label_shape);
+			caffe_set<Dtype>(8, -1, batch->label_.mutable_cpu_data());
+		}
+
       } else {
         // Reshape the label and store the annotation.
 		if (yolo_data_type_ == 1) {

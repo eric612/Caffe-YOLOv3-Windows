@@ -11,7 +11,11 @@
 #include "caffe/util/io.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/util/rng.hpp"
-int count = 0;
+const double prob_eps = 0.01;
+
+
+
+
 namespace caffe {
 
 template<typename Dtype>
@@ -38,10 +42,10 @@ DataTransformer<Dtype>::DataTransformer(const TransformationParameter& param,
       mean_values_.push_back(param_.mean_value(c));
     }
   }
-  if (param_.has_resize_param()) {
-    CHECK_GT(param_.resize_param().height(), 0);
-    CHECK_GT(param_.resize_param().width(), 0);
-  }
+  //if (param_.has_resize_param()) {
+  //  CHECK_GT(param_.resize_param().height(), 0);
+  //  CHECK_GT(param_.resize_param().width(), 0);
+  //}
   if (param_.has_expand_param()) {
     CHECK_GT(param_.expand_param().max_expand_ratio(), 1.);
   }
@@ -52,6 +56,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
                                        Dtype* transformed_data,
                                        NormalizedBBox* crop_bbox,
                                        bool* do_mirror) {
+	//LOG(INFO) << "test";
   const string& data = datum.data();
   const int datum_channels = datum.channels();
   const int datum_height = datum.height();
@@ -103,7 +108,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
       w_off = (datum_width - crop_size) / 2;
     }
   }
-
+  //LOG(INFO) << width << "," << height;
   // Return the normalized crop bbox.
   crop_bbox->set_xmin(Dtype(w_off) / datum_width);
   crop_bbox->set_ymin(Dtype(h_off) / datum_height);
@@ -155,7 +160,8 @@ template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const Datum& datum,
                                        Blob<Dtype>* transformed_blob,
                                        NormalizedBBox* crop_bbox,
-                                       bool* do_mirror) {
+                                       bool* do_mirror, int policy_num) {
+	//LOG(INFO) << policy_num;
   // If datum is encoded, decoded and transform the cv::image.
   if (datum.encoded()) {
 #ifdef USE_OPENCV
@@ -169,7 +175,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
       cv_img = DecodeDatumToCVMatNative(datum);
     }
     // Transform the cv::image into blob.
-    return Transform(cv_img, transformed_blob, crop_bbox, do_mirror);
+    return Transform(cv_img, transformed_blob, crop_bbox, do_mirror, policy_num);
 #else
     LOG(FATAL) << "Encoded datum requires OpenCV; compile with USE_OPENCV.";
 #endif  // USE_OPENCV
@@ -178,7 +184,7 @@ void DataTransformer<Dtype>::Transform(const Datum& datum,
       LOG(ERROR) << "force_color and force_gray only for encoded datum";
     }
   }
-
+  //LOG(INFO) << "test";
   const int crop_size = param_.crop_size();
   const int datum_channels = datum.channels();
   const int datum_height = datum.height();
@@ -223,7 +229,7 @@ void DataTransformer<Dtype>::Transform(const vector<Datum> & datum_vector,
   const int channels = transformed_blob->channels();
   const int height = transformed_blob->height();
   const int width = transformed_blob->width();
-
+  LOG(INFO) << "test";
   CHECK_GT(datum_num, 0) << "There is no datum to add";
   CHECK_LE(datum_num, num) <<
     "The size of datum_vector must be no greater than transformed_blob->num()";
@@ -239,34 +245,37 @@ template<typename Dtype>
 void DataTransformer<Dtype>::Transform(
     const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob,
     RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all,
-    bool* do_mirror) {
+    bool* do_mirror, int policy_num) {
   // Transform datum.
   const Datum& datum = anno_datum.datum();
   NormalizedBBox crop_bbox;
-  Transform(datum, transformed_blob, &crop_bbox, do_mirror);
+
+  Transform(datum, transformed_blob, &crop_bbox, do_mirror, policy_num);
 
   // Transform annotation.
   const bool do_resize = true;
   TransformAnnotation(anno_datum, do_resize, crop_bbox, *do_mirror,
-                      transformed_anno_group_all);
+                      transformed_anno_group_all, policy_num);
 }
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(
     const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob,
-    RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all) {
+    RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all, int policy_num) {
   bool do_mirror;
+  
   Transform(anno_datum, transformed_blob, transformed_anno_group_all,
-            &do_mirror);
+            &do_mirror, policy_num);
 }
 
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(
     const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob,
-    vector<AnnotationGroup>* transformed_anno_vec, bool* do_mirror) {
+    vector<AnnotationGroup>* transformed_anno_vec, bool* do_mirror, int policy_num) {
+  //LOG(INFO) << policy_num;
   RepeatedPtrField<AnnotationGroup> transformed_anno_group_all;
   Transform(anno_datum, transformed_blob, &transformed_anno_group_all,
-            do_mirror);
+            do_mirror, policy_num);
   for (int g = 0; g < transformed_anno_group_all.size(); ++g) {
     transformed_anno_vec->push_back(transformed_anno_group_all.Get(g));
   }
@@ -275,18 +284,22 @@ void DataTransformer<Dtype>::Transform(
 template<typename Dtype>
 void DataTransformer<Dtype>::Transform(
     const AnnotatedDatum& anno_datum, Blob<Dtype>* transformed_blob,
-    vector<AnnotationGroup>* transformed_anno_vec) {
+    vector<AnnotationGroup>* transformed_anno_vec,int policy_num) {
   bool do_mirror;
-  Transform(anno_datum, transformed_blob, transformed_anno_vec, &do_mirror);
+  //LOG(INFO) << policy_num;
+  Transform(anno_datum, transformed_blob, transformed_anno_vec, &do_mirror, policy_num);
 }
 
 template<typename Dtype>
 void DataTransformer<Dtype>::TransformAnnotation(
     const AnnotatedDatum& anno_datum, const bool do_resize,
     const NormalizedBBox& crop_bbox, const bool do_mirror,
-    RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all) {
+    RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all, int policy_num) {
   const int img_height = anno_datum.datum().height();
   const int img_width = anno_datum.datum().width();
+  const int num_resize_policies = param_.resize_param_size();
+  //LOG(INFO) << policy_num;
+  //LOG(INFO) << img_width << "," << img_height;
   if (anno_datum.type() == AnnotatedDatum_AnnotationType_BBOX) {
     // Go through each AnnotationGroup.
     for (int g = 0; g < anno_datum.annotation_group_size(); ++g) {
@@ -299,10 +312,10 @@ void DataTransformer<Dtype>::TransformAnnotation(
         const NormalizedBBox& bbox = anno.bbox();
         // Adjust bounding box annotation.
         NormalizedBBox resize_bbox = bbox;
-        if (do_resize && param_.has_resize_param()) {
+        if (do_resize && param_.resize_param_size()) {
           CHECK_GT(img_height, 0);
           CHECK_GT(img_width, 0);
-          UpdateBBoxByResizePolicy(param_.resize_param(), img_width, img_height,
+          UpdateBBoxByResizePolicy(param_.resize_param(policy_num), img_width, img_height,
                                    &resize_bbox);
         }
         if (param_.has_emit_constraint() &&
@@ -323,11 +336,12 @@ void DataTransformer<Dtype>::TransformAnnotation(
             transformed_bbox->set_xmin(1 - transformed_bbox->xmax());
             transformed_bbox->set_xmax(1 - temp);
           }
-          if (do_resize && param_.has_resize_param()) {
-            ExtrapolateBBox(param_.resize_param(), img_height, img_width,
+          if (do_resize && param_.resize_param_size()) {
+            ExtrapolateBBox(param_.resize_param(policy_num), img_height, img_width,
                 crop_bbox, transformed_bbox);
           }
         }
+		//LOG(INFO) << num_resize_policies;
       }
       // Save for output.
       if (has_valid_annotation) {
@@ -593,7 +607,8 @@ template<typename Dtype>
 void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
                                        Blob<Dtype>* transformed_blob,
                                        NormalizedBBox* crop_bbox,
-                                       bool* do_mirror) {
+                                       bool* do_mirror, int policy_num ) {
+	//LOG(INFO) << policy_num;
   // Check dimensions.
   const int img_channels = cv_img.channels();
   const int channels = transformed_blob->channels();
@@ -612,6 +627,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   const bool has_mean_file = param_.has_mean_file();
   const bool has_mean_values = mean_values_.size() > 0;
 
+    const int num_resize_policies = param_.resize_param_size();
   Dtype* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(img_channels, data_mean_.channels());
@@ -636,8 +652,8 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   }
 
   cv::Mat cv_resized_image, cv_noised_image, cv_cropped_image;
-  if (param_.has_resize_param()) {
-    cv_resized_image = ApplyResize(cv_img, param_.resize_param());
+  if (param_.resize_param_size()) {
+    cv_resized_image = ApplyResize(cv_img, param_.resize_param(policy_num));
   } else {
     cv_resized_image = cv_img;
   }
@@ -650,7 +666,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   int img_width = cv_noised_image.cols;
   CHECK_GE(img_height, crop_h);
   CHECK_GE(img_width, crop_w);
-
+  //LOG(INFO)<<img_width<<","<<img_height;
   int h_off = 0;
   int w_off = 0;
   if ((crop_h > 0) && (crop_w > 0)) {
@@ -675,14 +691,7 @@ void DataTransformer<Dtype>::Transform(const cv::Mat& cv_img,
   crop_bbox->set_ymin(Dtype(h_off) / img_height);
   crop_bbox->set_xmax(Dtype(w_off + width) / img_width);
   crop_bbox->set_ymax(Dtype(h_off + height) / img_height);
-  //LOG(INFO) << "w_off: " << w_off;
-  //LOG(INFO) << "h_off: " << h_off;
-  //char filename[256];
-  //sprintf(filename, "A%d.jpg", count);
-  //cv::imwrite(filename, cv_resized_image);
-  //sprintf(filename, "B%d.jpg", count);
-  //cv::imwrite(filename, cv_cropped_image);
-  count++;
+  //LOG(INFO)<<width <<","<<height;
   if (has_mean_file) {
     CHECK_EQ(cv_cropped_image.rows, data_mean_.height());
     CHECK_EQ(cv_cropped_image.cols, data_mean_.width());
@@ -730,7 +739,7 @@ void DataTransformer<Dtype>::TransformInv(const Dtype* data, cv::Mat* cv_img,
   const Dtype scale = param_.scale();
   const bool has_mean_file = param_.has_mean_file();
   const bool has_mean_values = mean_values_.size() > 0;
-
+  LOG(INFO)<<"test";
   Dtype* mean = NULL;
   if (has_mean_file) {
     CHECK_EQ(channels, data_mean_.channels());
@@ -771,8 +780,8 @@ void DataTransformer<Dtype>::TransformInv(const Dtype* data, cv::Mat* cv_img,
     }
   }
 
-  if (param_.has_resize_param()) {
-    *cv_img = ApplyResize(orig_img, param_.resize_param());
+  if (param_.resize_param_size()) {
+    *cv_img = ApplyResize(orig_img, param_.resize_param(0));
   } else {
     *cv_img = orig_img;
   }
@@ -823,13 +832,8 @@ void DataTransformer<Dtype>::CropImage(const cv::Mat& img,
   int width = static_cast<int>(scaled_bbox.xmax() - scaled_bbox.xmin());
   int height = static_cast<int>(scaled_bbox.ymax() - scaled_bbox.ymin());
   cv::Rect bbox_roi(w_off, h_off, width, height);
-  //char filename[256];
-  //sprintf(filename, "tmp\\A%d.jpg", count);
-  //cv::imwrite(filename, img);
-  img(bbox_roi).copyTo(*crop_img);
 
-  //sprintf(filename, "tmp\\B%d.jpg", count);
-  //cv::imwrite(filename, *crop_img);
+  img(bbox_roi).copyTo(*crop_img);
 }
 
 template <typename Dtype>
@@ -840,7 +844,7 @@ void DataTransformer<Dtype>::ExpandImage(const cv::Mat& img,
   const int img_height = img.rows;
   const int img_width = img.cols;
   const int img_channels = img.channels();
-
+  //LOG(INFO)<<img_width <<","<<img_height;
   // Get the bbox dimension.
   int height = static_cast<int>(img_height * expand_ratio);
   int width = static_cast<int>(img_width * expand_ratio);
@@ -924,7 +928,7 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
   const int height = transformed_blob->height();
   const int width = transformed_blob->width();
   const int size = transformed_blob->count();
-
+  LOG(INFO)<<width <<","<<height;
   CHECK_LE(input_num, num);
   CHECK_EQ(input_channels, channels);
   CHECK_GE(input_height, height);
@@ -1014,7 +1018,7 @@ void DataTransformer<Dtype>::Transform(Blob<Dtype>* input_blob,
 }
 
 template<typename Dtype>
-vector<int> DataTransformer<Dtype>::InferBlobShape(const Datum& datum) {
+vector<int> DataTransformer<Dtype>::InferBlobShape(const Datum& datum,int policy_num) {
   if (datum.encoded()) {
 #ifdef USE_OPENCV
     CHECK(!(param_.force_color() && param_.force_gray()))
@@ -1027,7 +1031,7 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(const Datum& datum) {
       cv_img = DecodeDatumToCVMatNative(datum);
     }
     // InferBlobShape using the cv::image.
-    return InferBlobShape(cv_img);
+    return InferBlobShape(cv_img, policy_num);
 #else
     LOG(FATAL) << "Encoded datum requires OpenCV; compile with USE_OPENCV.";
 #endif  // USE_OPENCV
@@ -1046,8 +1050,8 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(const Datum& datum) {
 
   // Check dimensions.
   CHECK_GT(datum_channels, 0);
-  if (param_.has_resize_param()) {
-    InferNewSize(param_.resize_param(), datum_width, datum_height,
+  if (param_.resize_param_size()) {
+    InferNewSize(param_.resize_param(policy_num), datum_width, datum_height,
                  &datum_width, &datum_height);
   }
   CHECK_GE(datum_height, crop_h);
@@ -1076,7 +1080,7 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(
 
 #ifdef USE_OPENCV
 template<typename Dtype>
-vector<int> DataTransformer<Dtype>::InferBlobShape(const cv::Mat& cv_img) {
+vector<int> DataTransformer<Dtype>::InferBlobShape(const cv::Mat& cv_img, int policy_num) {
   const int crop_size = param_.crop_size();
   int crop_h = param_.crop_h();
   int crop_w = param_.crop_w();
@@ -1089,8 +1093,9 @@ vector<int> DataTransformer<Dtype>::InferBlobShape(const cv::Mat& cv_img) {
   int img_width = cv_img.cols;
   // Check dimensions.
   CHECK_GT(img_channels, 0);
-  if (param_.has_resize_param()) {
-    InferNewSize(param_.resize_param(), img_width, img_height,
+  //LOG(INFO) << policy_num;
+  if (param_.resize_param_size()) {
+    InferNewSize(param_.resize_param(policy_num), img_width, img_height,
                  &img_width, &img_height);
   }
   CHECK_GE(img_height, crop_h);

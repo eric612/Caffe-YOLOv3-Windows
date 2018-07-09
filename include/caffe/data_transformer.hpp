@@ -68,18 +68,18 @@ class DataTransformer {
    */
   void Transform(const AnnotatedDatum& anno_datum,
                  Blob<Dtype>* transformed_blob,
-                 RepeatedPtrField<AnnotationGroup>* transformed_anno_vec);
+                 RepeatedPtrField<AnnotationGroup>* transformed_anno_vec, int policy_num = 0);
   void Transform(const AnnotatedDatum& anno_datum,
                  Blob<Dtype>* transformed_blob,
                  RepeatedPtrField<AnnotationGroup>* transformed_anno_vec,
-                 bool* do_mirror);
+                 bool* do_mirror, int policy_num = 0);
   void Transform(const AnnotatedDatum& anno_datum,
                  Blob<Dtype>* transformed_blob,
                  vector<AnnotationGroup>* transformed_anno_vec,
-                 bool* do_mirror);
+                 bool* do_mirror, int policy_num = 0);
   void Transform(const AnnotatedDatum& anno_datum,
                  Blob<Dtype>* transformed_blob,
-                 vector<AnnotationGroup>* transformed_anno_vec);
+                 vector<AnnotationGroup>* transformed_anno_vec, int policy_num = 0);
 
   /**
    * @brief Transform the annotation according to the transformation applied
@@ -99,7 +99,7 @@ class DataTransformer {
   void TransformAnnotation(
       const AnnotatedDatum& anno_datum, const bool do_resize,
       const NormalizedBBox& crop_bbox, const bool do_mirror,
-      RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all);
+      RepeatedPtrField<AnnotationGroup>* transformed_anno_group_all, int policy_num = 0);
 
   /**
    * @brief Crops the datum according to bbox.
@@ -155,7 +155,7 @@ class DataTransformer {
    *    set_cpu_data() is used. See image_data_layer.cpp for an example.
    */
   void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob,
-                 NormalizedBBox* crop_bbox, bool* do_mirror);
+                 NormalizedBBox* crop_bbox, bool* do_mirror, int policy_num = 0);
   void Transform(const cv::Mat& cv_img, Blob<Dtype>* transformed_blob);
 
   /**
@@ -195,7 +195,7 @@ class DataTransformer {
    * @param datum
    *    Datum containing the data to be transformed.
    */
-  vector<int> InferBlobShape(const Datum& datum);
+  vector<int> InferBlobShape(const Datum& datum,int policy_num = 0);
   /**
    * @brief Infers the shape of transformed_blob will have when
    *    the transformation is applied to the data.
@@ -222,7 +222,7 @@ class DataTransformer {
    * @param cv_img
    *    cv::Mat containing the data to be transformed.
    */
-  vector<int> InferBlobShape(const cv::Mat& cv_img);
+  vector<int> InferBlobShape(const cv::Mat& cv_img, int policy_num = 0);
 #endif  // USE_OPENCV
 
  protected:
@@ -246,7 +246,7 @@ class DataTransformer {
    * transform_param block to the data and return transform information.
    */
   void Transform(const Datum& datum, Blob<Dtype>* transformed_blob,
-                 NormalizedBBox* crop_bbox, bool* do_mirror);
+                 NormalizedBBox* crop_bbox, bool* do_mirror, int policy_num = 0);
 
   // Tranformation parameters
   TransformationParameter param_;
