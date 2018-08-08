@@ -1,0 +1,3 @@
+[submodule "models/Yolo-Model-Zoo"]
+	path = models/Yolo-Model-Zoo
+	url = https://github.com/eric612/Yolo-Model-Zoo.git

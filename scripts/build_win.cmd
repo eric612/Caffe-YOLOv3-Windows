@@ -86,7 +86,7 @@ if DEFINED APPVEYOR (
     :: Change to 3 if using python 3.5 (only 2.7 and 3.5 are supported)
     if NOT DEFINED PYTHON_VERSION set PYTHON_VERSION=2
     :: Change these options for your needs.
-    if NOT DEFINED BUILD_PYTHON set BUILD_PYTHON=1
+    if NOT DEFINED BUILD_PYTHON set BUILD_PYTHON=0
     if NOT DEFINED BUILD_PYTHON_LAYER set BUILD_PYTHON_LAYER=1
     if NOT DEFINED BUILD_MATLAB set BUILD_MATLAB=0
     :: If python is on your path leave this alone
