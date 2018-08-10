@@ -4,6 +4,6 @@ Using trasilation layer instead of reorg layer , training from original darknet-
 
 Network|mAP|Train|Deploy|NetScope
 :---:|:---:|:---:|:---:|:---:
-Darknet-19-custom|0.71| [imagenet](https://drive.google.com/file/d/141AVMm_h8nv3RpgylRyhUYb4w8rEguLM/view?usp=sharing) |[download](https://drive.google.com/open?id=1AlqzP8jm_mj6YTzn8eTlVNGY-1nGIej-)|[graph](http://ethereon.github.io/netscope/#/gist/21f650a2bc02bd8d03bc44a9a043f43e)
+Darknet-19-custom|0.715| [imagenet](https://drive.google.com/file/d/141AVMm_h8nv3RpgylRyhUYb4w8rEguLM/view?usp=sharing) |[download](https://drive.google.com/open?id=1Z8YaLZH7bY9NVQe0AvOP1kooRFmVvkpt)|[graph](http://ethereon.github.io/netscope/#/gist/21f650a2bc02bd8d03bc44a9a043f43e)
 
 Note : I will update if I can get higher mAP

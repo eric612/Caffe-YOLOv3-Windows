@@ -358,8 +358,13 @@ void RegionLossLayer<Dtype>::Forward_cpu(
 					best_n = n;
 				}
 			}
-			//float iou = delta_region_box(truth, swap_data, biases_, best_n, best_index, i, j, side_, side_, diff, coord_scale_*( 2 - truth[2]*truth[3]));
-			float iou = delta_region_box(truth, swap_data, biases_, best_n, best_index, i, j, side_, side_, diff, coord_scale_);
+			float iou;
+			if (rescore_) {
+				iou = delta_region_box(truth, swap_data, biases_, best_n, best_index, i, j, side_, side_, diff, coord_scale_);
+			}
+			else {
+				iou = delta_region_box(truth, swap_data, biases_, best_n, best_index, i, j, side_, side_, diff, coord_scale_*( 2 - truth[2]*truth[3]));
+			}
 			if (iou > 0.5)
 				recall += 1;
 			avg_iou += iou;

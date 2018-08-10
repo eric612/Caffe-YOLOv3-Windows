@@ -4,7 +4,7 @@ test_iter: 4952
 test_interval: 1000
 base_lr: 0.001
 display: 10
-max_iter: 60000
+max_iter: 80000
 lr_policy: "multifixed"
 #gamma: 0.1
 weight_decay: 0.0005
@@ -19,15 +19,15 @@ snapshot_after_train: true
 test_initialization: false
 average_loss: 10
 #stagelr: 0.00001
-stagelr: 0.0001
+#stagelr: 0.0001
 stagelr: 0.001
 stagelr: 0.0001
 stagelr: 0.00001
 #stageiter: 50
-stageiter: 100
+#stageiter: 100
 stageiter: 40000
-stageiter: 55000
 stageiter: 60000
+stageiter: 80000
 iter_size: 10
 type: "SGD"
 eval_type: "detection"

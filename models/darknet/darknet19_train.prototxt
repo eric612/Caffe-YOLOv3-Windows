@@ -1834,7 +1834,7 @@ layer {
     num: 5
     softmax: 1
     jitter: 0.2
-    rescore: 1
+    rescore: 0
     
     object_scale: 5.0
     noobject_scale: 1.0
