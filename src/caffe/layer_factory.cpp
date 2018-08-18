@@ -29,6 +29,7 @@
 #include "caffe/layers/normalize_layer.hpp"
 #include "caffe/layers/sigmoid_cross_entropy_loss_layer.hpp"
 #include "caffe/layers/region_loss_layer.hpp"
+#include "caffe/layers/yolov3_layer.hpp"
 #include "caffe/layers/yolo_detection_output_layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/layers/reorg_layer.hpp"
@@ -211,7 +212,12 @@ shared_ptr<Layer<Dtype> > GetRegionLossLayer(const LayerParameter& param) {
 REGISTER_LAYER_CREATOR(RegionLoss, GetRegionLossLayer);
 // Get Permute layer according to engine.
 
-
+// Get RegionLoss layer according to engine.
+template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetYolov3Layer(const LayerParameter& param) {
+	return shared_ptr<Layer<Dtype> >(new Yolov3Layer<Dtype>(param));
+}
+REGISTER_LAYER_CREATOR(Yolov3, GetYolov3Layer);
 
 
 // Get Reshape layer according to engine.

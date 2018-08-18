@@ -10,111 +10,111 @@
 #include <map>
 
 namespace caffe {
-template <typename Dtype>
-Dtype Overlap(Dtype x1, Dtype w1, Dtype x2, Dtype w2);
+	template <typename Dtype>
+	Dtype Overlap(Dtype x1, Dtype w1, Dtype x2, Dtype w2);
 
-template <typename Dtype>
-Dtype Calc_iou(const vector<Dtype>& box, const vector<Dtype>& truth);
+	template <typename Dtype>
+	Dtype Calc_iou(const vector<Dtype>& box, const vector<Dtype>& truth);
 
-template <typename Dtype>
-void disp(Blob<Dtype>& swap);
+	template <typename Dtype>
+	void disp(Blob<Dtype>& swap);
 
-template <typename Dtype>
-inline Dtype sigmoid(Dtype x)
-{
-  return 1. / (1. + exp(-x));
-}
+	template <typename Dtype>
+	inline Dtype sigmoid(Dtype x)
+	{
+		return 1. / (1. + exp(-x));
+	}
 
-template <typename Dtype>
-Dtype softmax_region(Dtype* input, int classes, int stride);
-//template <typename Dtype>
-//Dtype softmax_region(Dtype* input, int n, float temp, Dtype* output);
-
-
-
-template <typename Dtype>
-vector<Dtype> get_region_box(Dtype* x, vector<Dtype> biases, int n, int index, int i, int j, int w, int h,int stride);
-
-template <typename Dtype>
-Dtype delta_region_box(vector<Dtype> truth, Dtype* x, vector<Dtype> biases, int n, int index, int i, int j, int w, int h, Dtype* delta, float scale, int stride);
-
-template <typename Dtype>
-void delta_region_class(Dtype* input_data, Dtype* &diff, int index, int class_label, int classes, float scale, Dtype* avg_cat, int stride);
-
-template <typename Dtype>
-class PredictionResult {
-public:
-	Dtype x;
-	Dtype y;
-	Dtype w;
-	Dtype h;
-	Dtype objScore;
-	Dtype classScore;
-	Dtype confidence;
-	int classType;
-};
+	template <typename Dtype>
+	Dtype softmax_region(Dtype* input, int classes, int stride);
+	//template <typename Dtype>
+	//Dtype softmax_region(Dtype* input, int n, float temp, Dtype* output);
 
 
-struct AvgRegionScore {
-public:
-	float avg_anyobj;
-	float avg_obj;
-	float avg_iou;
-	float avg_cat;
-	float recall;
-	float recall75,loss;
-};
 
-template <typename Dtype>
-class RegionLossLayer : public LossLayer<Dtype> {
- public:
-  explicit RegionLossLayer(const LayerParameter& param)
-      : LossLayer<Dtype>(param), diff_() {}
-  virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
+	template <typename Dtype>
+	void get_region_box(vector<Dtype> &b, Dtype* x, vector<Dtype> biases, int n, int index, int i, int j, int w, int h, int stride);
 
-  virtual inline const char* type() const { return "RegionLoss"; }
+	template <typename Dtype>
+	Dtype delta_region_box(vector<Dtype> truth, Dtype* x, vector<Dtype> biases, int n, int index, int i, int j, int w, int h, Dtype* delta, float scale, int stride);
+
+	template <typename Dtype>
+	void delta_region_class(Dtype* input_data, Dtype* &diff, int index, int class_label, int classes, float scale, Dtype* avg_cat, int stride);
+
+	template <typename Dtype>
+	class PredictionResult {
+	public:
+		Dtype x;
+		Dtype y;
+		Dtype w;
+		Dtype h;
+		Dtype objScore;
+		Dtype classScore;
+		Dtype confidence;
+		int classType;
+	};
 
 
- protected:
-  virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top);
-  // virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
-  //     const vector<Blob<Dtype>*>& top);
+	struct AvgRegionScore {
+	public:
+		float avg_anyobj;
+		float avg_obj;
+		float avg_iou;
+		float avg_cat;
+		float recall;
+		float recall75, loss;
+	};
 
-  virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
-      const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  // virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
-  //     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
-  
-  int side_;
-  int bias_match_;
-  int num_class_;
-  int coords_;
-  int num_;
-  int softmax_;
-  float jitter_;
-  int rescore_;
-  
-  float object_scale_;
-  float class_scale_;
-  float noobject_scale_;
-  float coord_scale_;
-  
-  int absolute_;
-  float thresh_;
-  int random_;
-  vector<Dtype> biases_;
+	template <typename Dtype>
+	class RegionLossLayer : public LossLayer<Dtype> {
+	public:
+		explicit RegionLossLayer(const LayerParameter& param)
+			: LossLayer<Dtype>(param), diff_() {}
+		virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
+			const vector<Blob<Dtype>*>& top);
+		virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+			const vector<Blob<Dtype>*>& top);
 
-  Blob<Dtype> diff_;
-  Blob<Dtype> real_diff_;
+		virtual inline const char* type() const { return "RegionLoss"; }
 
-  string class_map_;
-  map<int, int> cls_map_;
-  AvgRegionScore score_;
-};
+
+	protected:
+		virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
+			const vector<Blob<Dtype>*>& top);
+		// virtual void Forward_gpu(const vector<Blob<Dtype>*>& bottom,
+		//     const vector<Blob<Dtype>*>& top);
+
+		virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
+			const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+		// virtual void Backward_gpu(const vector<Blob<Dtype>*>& top,
+		//     const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom);
+
+		int side_;
+		int bias_match_;
+		int num_class_;
+		int coords_;
+		int num_;
+		int softmax_;
+		float jitter_;
+		int rescore_;
+
+		float object_scale_;
+		float class_scale_;
+		float noobject_scale_;
+		float coord_scale_;
+
+		int absolute_;
+		float thresh_;
+		int random_;
+		vector<Dtype> biases_;
+
+		Blob<Dtype> diff_;
+		Blob<Dtype> real_diff_;
+
+		string class_map_;
+		map<int, int> cls_map_;
+		AvgRegionScore score_;
+	};
 
 }  // namespace caffe
 
