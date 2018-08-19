@@ -110,7 +110,7 @@ namespace caffe {
 
 		Blob<Dtype> diff_;
 		Blob<Dtype> real_diff_;
-
+		Blob<Dtype> swap_;
 		string class_map_;
 		map<int, int> cls_map_;
 		AvgRegionScore score_;

@@ -1,3 +1,10 @@
+/*
+* @Author: Eric612
+* @Date:   2018-08-20 
+* @https://github.com/eric612/Caffe-YOLOv2-Windows
+* @https://github.com/eric612/MobileNet-YOLO
+* Avisonic
+*/
 #include <algorithm>
 #include <cfloat>
 #include <vector>
@@ -78,8 +85,8 @@ namespace caffe {
 	void get_region_box(vector<Dtype> &b, Dtype* x, vector<Dtype> biases, int n, int index, int i, int j, int lw, int lh, int w, int h, int stride) {
 
 		b.clear();
-		b.push_back((i + sigmoid(x[index + 0 * stride])) / lw);
-		b.push_back((j + sigmoid(x[index + 1 * stride])) / lh);
+		b.push_back((i + (x[index + 0 * stride])) / lw);
+		b.push_back((j + (x[index + 1 * stride])) / lh);
 		b.push_back(exp(x[index + 2 * stride]) * biases[2 * n] / (w));
 		b.push_back(exp(x[index + 3 * stride]) * biases[2 * n + 1] / (h));
 	}
@@ -96,10 +103,10 @@ namespace caffe {
 		float tw = log(truth[2] * w / biases[2 * n]); //truth[2]=biases/w tw = 0
 		float th = log(truth[3] * h / biases[2 * n + 1]); //th = 0
 
-		delta[index + 0] = (-1) * scale * (tx - sigmoid(x[index + 0 * stride])) * sigmoid(x[index + 0 * stride]) * (1 - sigmoid(x[index + 0 * stride]));
-		delta[index + 1 * stride] = (-1) * scale * (ty - sigmoid(x[index + 1 * stride])) * sigmoid(x[index + 1 * stride]) * (1 - sigmoid(x[index + 1 * stride]));
-		//delta[index + 0] = (-1) * scale * (1 - (tx - x[index + 0])*(tx - x[index + 0]));
-		//delta[index + 1] = (-1) * scale * (1 - (ty - x[index + 1])*(ty - x[index + 1]));
+		//delta[index + 0] = (-1) * scale * (tx - sigmoid(x[index + 0 * stride])) * sigmoid(x[index + 0 * stride]) * (1 - sigmoid(x[index + 0 * stride]));
+		//delta[index + 1 * stride] = (-1) * scale * (ty - sigmoid(x[index + 1 * stride])) * sigmoid(x[index + 1 * stride]) * (1 - sigmoid(x[index + 1 * stride]));
+		delta[index + 0 * stride] = (-1) * scale * (tx - x[index + 0 * stride]);
+		delta[index + 1 * stride] = (-1) * scale * (ty - x[index + 1 * stride]);
 		delta[index + 2 * stride] = (-1) * scale * (tw - x[index + 2 * stride]);
 		delta[index + 3 * stride] = (-1) * scale * (th - x[index + 3 * stride]);
 
@@ -162,9 +169,9 @@ namespace caffe {
 		int class_count = 0;
 		const Dtype* input_data = bottom[0]->cpu_data();
 		//const Dtype* label_data = bottom[1]->cpu_data();
-		Blob<Dtype> swap;
-		swap.ReshapeLike(*bottom[0]);
-		Dtype* swap_data = bottom[0]->mutable_cpu_data();
+		
+		swap_.ReshapeLike(*bottom[0]);
+		Dtype* swap_data = swap_.mutable_cpu_data();
 		//LOG(INFO) << diff_.channels() << "," << diff_.height();
 		//LOG(INFO)<<bottom[0]->count(1)*bottom[0]->num();
 		//LOG(INFO) << bottom[0]->num()<<","<< bottom[0]->channels() << "," << bottom[0]->height() << "," << bottom[0]->width();
@@ -184,14 +191,14 @@ namespace caffe {
 					for (int c = 0; c < len; ++c) {
 						int index2 = c*stride + index;
 						//LOG(INFO)<<index2;
-						if (c == 4) {
-							swap_data[index2] = logistic_activate(input_data[index2 + 0]);
-						}
-						else {
+						if (c == 2 || c==3) {
 							swap_data[index2] = (input_data[index2 + 0]);
 						}
+						else {						
+							swap_data[index2] = logistic_activate(input_data[index2 + 0]);
+						}
 					}
-					softmax_region(swap_data + index + 5 * stride, num_class_, stride);
+					//softmax_region(swap_data + index + 5 * stride, num_class_, stride);
 					//LOG(INFO) << index + 5;
 					int y2 = s / side_;
 					int x2 = s % side_;
@@ -219,10 +226,18 @@ namespace caffe {
 						}
 					}
 					avg_anyobj += swap_data[index + 4 * stride];
-					//diff[index + 4] = (-1) * noobject_scale_* (0 - swap_data[index + 4]);
-					diff[index + 4 * stride] = (-1) * noobject_scale_ * (0 - swap_data[index + 4 * stride]) *logistic_gradient(swap_data[index + 4 * stride]);
+					diff[index + 4 * stride] = (-1) * (0 - swap_data[index + 4 * stride]);
+					//diff[index + 4 * stride] = (-1) * noobject_scale_ * (0 - swap_data[index + 4 * stride]) *logistic_gradient(swap_data[index + 4 * stride]);
 					if (best_iou > thresh_) {
 						diff[index + 4 * stride] = 0;
+					}
+					if (best_iou > 1) {
+						LOG(INFO) << "best_iou > 1"; // plz tell me ..
+						diff[index + 4 * stride] = (-1) * (1 - swap_data[index + 4 * stride]);
+
+						delta_region_class_v3(swap_data, diff, index + 5 * stride, best_class, num_class_, class_scale_, &avg_cat, stride);
+						delta_region_box(best_truth, swap_data, biases_, mask_[n], index, x2, y2, side_, side_,
+							side_*anchors_scale_, side_*anchors_scale_, diff, coord_scale_*(2 - best_truth[2] * best_truth[3]), stride);
 					}
 				}
 			}
@@ -258,10 +273,9 @@ namespace caffe {
 				for (int n = 0; n < num_; ++n) {
 					int index2 = n*len*stride + pos + b * bottom[0]->count(1);
 					//LOG(INFO) << index2;
-					vector<Dtype> pred;
-					get_region_box(pred, swap_data, biases_, mask_[n], index2, i, j, side_, side_, side_*anchors_scale_, side_*anchors_scale_, stride);
-					pred[2] = biases_[2 * mask_[n]] / (float)side_;
-					pred[3] = biases_[2 * mask_[n] + 1] / (float)side_;
+					vector<Dtype> pred(4);
+					pred[2] = biases_[2 * mask_[n]] / (float)(side_*anchors_scale_);
+					pred[3] = biases_[2 * mask_[n] + 1] / (float)(side_*anchors_scale_);
 
 					pred[0] = 0;
 					pred[1] = 0;
@@ -282,8 +296,8 @@ namespace caffe {
 				avg_iou += iou;
 				avg_obj += swap_data[best_index + 4 * stride];
 
-				diff[best_index + 4 * stride] = (-1.0) * object_scale_ * (1 - swap_data[best_index + 4 * stride]) * logistic_gradient(swap_data[best_index + 4 * stride]);
-
+				//diff[best_index + 4 * stride] = (-1.0) * object_scale_ * (1 - swap_data[best_index + 4 * stride]) * logistic_gradient(swap_data[best_index + 4 * stride]);
+				diff[best_index + 4 * stride] = (-1.0) * (1 - swap_data[best_index + 4 * stride]);
 
 				delta_region_class_v3(swap_data, diff, best_index + 5 * stride, class_label, num_class_, class_scale_, &avg_cat, stride); //softmax_tree_
 
@@ -324,6 +338,34 @@ namespace caffe {
 			LOG(FATAL) << this->type() << " Layer cannot backpropagate to label inputs.";
 		}
 		if (propagate_down[0]) {
+			/*const Dtype* top_data = swap_.cpu_data();
+			Dtype* diff = diff_.mutable_cpu_data();
+			side_ = bottom[0]->width();
+			int len = 4 + num_class_ + 1;
+			int stride = side_*side_;
+			//LOG(INFO)<<swap.count(1);
+			for (int b = 0; b < bottom[0]->num(); b++) {
+				for (int s = 0; s < side_*side_; s++) {
+					for (int n = 0; n < num_; n++) {
+						int index = n*len*stride + s + b*bottom[0]->count(1);
+						//LOG(INFO)<<index;
+						vector<Dtype> pred;
+						float best_iou = 0;
+						int best_class = -1;
+						vector<Dtype> best_truth;
+						for (int c = 0; c < len; ++c) {
+							int index2 = c*stride + index;
+							//LOG(INFO)<<index2;
+							if (c == 2 || c == 3) {
+								diff[index2] = diff[index2 + 0];
+							}
+							else {
+								diff[index2] = diff[index2 + 0]* logistic_gradient(top_data[index2 + 0]);
+							}
+						}
+					}
+				}
+			}*/
 			const Dtype sign(1.);
 			const Dtype alpha = sign * top[0]->cpu_diff()[0] / bottom[0]->num();
 			//const Dtype alpha(1.0);

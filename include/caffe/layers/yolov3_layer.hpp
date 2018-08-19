@@ -61,6 +61,7 @@ public:
 	vector<Dtype> mask_;
 	Blob<Dtype> diff_;
 	Blob<Dtype> real_diff_;
+	Blob<Dtype> swap_;
 	AvgRegionScore score_;
 };
 
