@@ -31,6 +31,7 @@
 #include "caffe/layers/region_loss_layer.hpp"
 #include "caffe/layers/yolov3_layer.hpp"
 #include "caffe/layers/yolo_detection_output_layer.hpp"
+#include "caffe/layers/yolov3_detection_output_layer.hpp"
 #include "caffe/proto/caffe.pb.h"
 #include "caffe/layers/reorg_layer.hpp"
 #include "caffe/layers/depthwise_conv_layer.hpp"
@@ -202,6 +203,12 @@ shared_ptr<Layer<Dtype> > GetYoloDetectionOutputLayer(const LayerParameter& para
 }
 REGISTER_LAYER_CREATOR(YoloDetectionOutput, GetYoloDetectionOutputLayer);
 
+// Get DetectionOutput layer according to engine.
+template <typename Dtype>
+shared_ptr<Layer<Dtype> > GetYolov3DetectionOutputLayer(const LayerParameter& param) {
+	return shared_ptr<Layer<Dtype> >(new Yolov3DetectionOutputLayer<Dtype>(param));
+}
+REGISTER_LAYER_CREATOR(Yolov3DetectionOutput, GetYolov3DetectionOutputLayer);
 
 
 // Get RegionLoss layer according to engine.

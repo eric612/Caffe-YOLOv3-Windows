@@ -24,7 +24,6 @@ public:
 
 	virtual inline const char* type() const { return "Yolov3"; }
 	
-	template <typename Dtype>
 	class PredictionResult {
 	public:
 		Dtype x;
@@ -57,6 +56,7 @@ public:
 	float noobject_scale_;
 	float coord_scale_;
 	float thresh_;
+	bool use_logic_gradient_;
 	vector<Dtype> biases_;
 	vector<Dtype> mask_;
 	Blob<Dtype> diff_;

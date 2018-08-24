@@ -127,7 +127,7 @@ namespace caffe {
 		class_scale_ = param.class_scale(); //1.0
 		coord_scale_ = param.coord_scale(); //1.0
 		thresh_ = param.thresh(); //0.6
-
+		use_logic_gradient_ = param.use_logic_gradient();
 		for (int c = 0; c < param.biases_size(); ++c) {
 			biases_.push_back(param.biases(c));
 		} 
@@ -295,9 +295,14 @@ namespace caffe {
 					recall75 += 1;
 				avg_iou += iou;
 				avg_obj += swap_data[best_index + 4 * stride];
-
-				//diff[best_index + 4 * stride] = (-1.0) * object_scale_ * (1 - swap_data[best_index + 4 * stride]) * logistic_gradient(swap_data[best_index + 4 * stride]);
-				diff[best_index + 4 * stride] = (-1.0) * (1 - swap_data[best_index + 4 * stride]);
+				if (use_logic_gradient_) {
+					diff[best_index + 4 * stride] = (-1.0) * (1 - swap_data[best_index + 4 * stride]) * object_scale_;
+				}
+				else {
+					diff[best_index + 4 * stride] = (-1.0) * (1 - swap_data[best_index + 4 * stride]);
+				}
+				
+				//diff[best_index + 4 * stride] = (-1.0) * (1 - swap_data[best_index + 4 * stride]) ;
 
 				delta_region_class_v3(swap_data, diff, best_index + 5 * stride, class_label, num_class_, class_scale_, &avg_cat, stride); //softmax_tree_
 
@@ -338,34 +343,42 @@ namespace caffe {
 			LOG(FATAL) << this->type() << " Layer cannot backpropagate to label inputs.";
 		}
 		if (propagate_down[0]) {
-			/*const Dtype* top_data = swap_.cpu_data();
-			Dtype* diff = diff_.mutable_cpu_data();
-			side_ = bottom[0]->width();
-			int len = 4 + num_class_ + 1;
-			int stride = side_*side_;
-			//LOG(INFO)<<swap.count(1);
-			for (int b = 0; b < bottom[0]->num(); b++) {
-				for (int s = 0; s < side_*side_; s++) {
-					for (int n = 0; n < num_; n++) {
-						int index = n*len*stride + s + b*bottom[0]->count(1);
-						//LOG(INFO)<<index;
-						vector<Dtype> pred;
-						float best_iou = 0;
-						int best_class = -1;
-						vector<Dtype> best_truth;
-						for (int c = 0; c < len; ++c) {
-							int index2 = c*stride + index;
-							//LOG(INFO)<<index2;
-							if (c == 2 || c == 3) {
-								diff[index2] = diff[index2 + 0];
-							}
-							else {
-								diff[index2] = diff[index2 + 0]* logistic_gradient(top_data[index2 + 0]);
+			if (use_logic_gradient_) {
+				const Dtype* top_data = swap_.cpu_data();
+				Dtype* diff = diff_.mutable_cpu_data();
+				side_ = bottom[0]->width();
+				int len = 4 + num_class_ + 1;
+				int stride = side_*side_;
+				//LOG(INFO)<<swap.count(1);
+				for (int b = 0; b < bottom[0]->num(); b++) {
+					for (int s = 0; s < side_*side_; s++) {
+						for (int n = 0; n < num_; n++) {
+							int index = n*len*stride + s + b*bottom[0]->count(1);
+							//LOG(INFO)<<index;
+							vector<Dtype> pred;
+							float best_iou = 0;
+							int best_class = -1;
+							vector<Dtype> best_truth;
+							for (int c = 0; c < len; ++c) {
+								int index2 = c*stride + index;
+								//LOG(INFO)<<index2;
+								if (c == 2 || c == 3) {
+									diff[index2] = diff[index2 + 0];
+								}
+								else {
+									diff[index2] = diff[index2 + 0] * logistic_gradient(top_data[index2 + 0]);
+								}
 							}
 						}
 					}
 				}
-			}*/
+			}
+			else {
+				// non-logic_gradient formula
+				// https://blog.csdn.net/yanzi6969/article/details/80505421
+				// https://xmfbit.github.io/2018/03/21/cs229-supervised-learning/
+				// https://zlatankr.github.io/posts/2017/03/06/mle-gradient-descent
+			}
 			const Dtype sign(1.);
 			const Dtype alpha = sign * top[0]->cpu_diff()[0] / bottom[0]->num();
 			//const Dtype alpha(1.0);
