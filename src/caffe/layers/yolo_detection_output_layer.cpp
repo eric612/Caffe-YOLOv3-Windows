@@ -289,6 +289,7 @@ void YoloDetectionOutputLayer<Dtype>::Forward_cpu(
 						predict.confidence = predict.objScore *predict.classScore;
 						if (predict.confidence >= confidence_threshold_)
 						{
+							//LOG(INFO) << "detect two scaler layer";
 							predicts.push_back(predict);
 						}
 					}
