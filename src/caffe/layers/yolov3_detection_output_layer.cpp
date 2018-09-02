@@ -1,3 +1,10 @@
+/*
+* @Author: Eric612
+* @Date:   2018-08-20 
+* @https://github.com/eric612/Caffe-YOLOv2-Windows
+* @https://github.com/eric612/MobileNet-YOLO
+* Avisonic
+*/
 #include <algorithm>
 #include <fstream>  // NOLINT(readability/streams)
 #include <map>
@@ -234,6 +241,7 @@ void Yolov3DetectionOutputLayer<Dtype>::Forward_cpu(
 	vector< PredictionResult<Dtype> > predicts;
 	predicts.clear();
 	Dtype *class_score = new Dtype[num_class_];
+	
 	for (int t = 0; t < bottom.size(); t++) {
 		side_ = bottom[t]->width();
 		int stride = side_*side_;
@@ -270,6 +278,7 @@ void Yolov3DetectionOutputLayer<Dtype>::Forward_cpu(
 					Dtype obj_score = swap_data[index + 4 * stride];
 					//LOG(INFO) << obj_score;
 					get_region_box2(pred, swap_data, biases_, mask_[n + mask_offset], index, x2, y2, side_, side_, side_*anchors_scale_[t], side_*anchors_scale_[t], stride);
+					//LOG(INFO)<<anchors_scale_[t];
 					//LOG(INFO) << pred[0] << "," << pred[1];
 					//float maxmima_score = 0;
 					PredictionResult<Dtype> predict;
@@ -302,6 +311,7 @@ void Yolov3DetectionOutputLayer<Dtype>::Forward_cpu(
 			}
 		}
 		mask_offset += groups_num_;
+		
 	}
 
 	delete[] class_score;
