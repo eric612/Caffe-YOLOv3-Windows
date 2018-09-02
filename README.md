@@ -70,7 +70,7 @@ cd $caffe_root
 examples\demo_darknet19.cmd
 ```
 
-### MobilenetYOLO Demo
+### Mobilenet-YOLO Demo
 
 Download [deploy model](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_deploy_iter_62000.caffemodel)
 
@@ -94,27 +94,19 @@ Unzip into $caffe_root/
 
 Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
 
-Download [pre-trained weights](https://drive.google.com/file/d/141AVMm_h8nv3RpgylRyhUYb4w8rEguLM/view?usp=sharing) , and save at $caffe_root\model\convert
 
-### Training Darknet YOLOv2 
-
-```
-> cd $caffe_root/
-> examples\train_yolo_darknet.cmd
-```
-
-
-### Trainning MobilenetYOLO
+### Trainning Mobilenet-YOLOv3
   
 ```
 > cd $caffe_root/
-> examples\train_yolo.cmd
+> examples\train_yolov3_lite.cmd
 ```
 
 
 ### Future work 
 
-1. yolov3 
+1. origina-yolov3 network
+2. COCO training and eval
 
 ## Reference
 

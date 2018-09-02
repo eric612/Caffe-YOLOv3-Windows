@@ -10,7 +10,7 @@ gamma: 0.5
 weight_decay: 0.00005
 snapshot: 1000
 snapshot_prefix: "models/yolov3/mobilenet_yolov3_lite_deploy"
-solver_mode: GPU
+solver_mode: CPU
 debug_info: false
 snapshot_after_train: true
 test_initialization: false
