@@ -8,7 +8,9 @@ MobileNet-YOLO-Lite|0.675|416|[deploy](https://github.com/eric612/MobileNet-YOLO
 MobileNet-YOLOv3-Lite|0.726|416|[deploy](models/yolov3/)|[graph](http://ethereon.github.io/netscope/#/gist/f308433ad8ba69e5a4e36d02482f8829)|
 MobileNet-YOLOv3-Lite|0.708|320|[deploy](models/yolov3/)|[graph](http://ethereon.github.io/netscope/#/gist/f308433ad8ba69e5a4e36d02482f8829)|
 
-Note : Training from linux version and test on windows version , the mAP of MobileNetYOLO-lite was 0.668 
+Note : 
+>1. Training from linux version and test on windows version , the mAP of MobileNetYOLO-lite was 0.668<br>
+>2. Training from imagenet [model](https://drive.google.com/open?id=0B3gersZ2cHIxZi13UWF0OXBsZzA) , mAP  of MobileNet-YOLOv3-Lite was 0.68
 
 ## Performance
 
@@ -16,11 +18,12 @@ Compare with [YOLOv2](https://pjreddie.com/darknet/yolov2/) , I can't find yolov
 
 Network|mAP|Weight size|Inference time (GTX 1080)
 :---:|:---:|:---:|:---:
-MobileNet-YOLOv3-Lite|0.726|20.3 mb|N/A
+MobileNet-YOLOv3-Lite|0.708|20.3 mb|6 ms (320x320)
+MobileNet-YOLOv3-Lite|0.726|20.3 mb|11 ms (416x416)
 Tiny-YOLO|0.57|60.5 mb|N/A
 YOLOv2|0.76|193 mb|N/A
 
-Note :  the yolo_detection_output_layer not be optimization , and [batch norm and scale layer can merge into conv layer](https://github.com/chuanqi305/MobileNet-SSD/blob/master/merge_bn.py)
+Note :  the yolo_detection_output_layer not be optimization , and the deploy model was made by [merge_bn.py](https://github.com/chuanqi305/MobileNet-SSD/blob/master/merge_bn.py)
 
 ## Other models
 

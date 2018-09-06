@@ -4,8 +4,8 @@ set detector=1
 set confidence_threshold=0.3
 set in_dir=data\
 set wait_time=2000
-build\examples\ssd\Release\ssd_detect models\yolov2\mobilenet_yolo_lite_deploy.prototxt ^
-models\yolov2\mobilenet_yolo_lite_deploy_iter_62000.caffemodel ^
+build\examples\ssd\Release\ssd_detect models\yolov3\mobilenet_yolov3_lite_deploy.prototxt ^
+models\yolov3\mobilenet_yolov3_lite_deploy.caffemodel ^
 %in_dir% ^
 -file_type image ^
 -mean_value 0.5,0.5,0.5 ^
