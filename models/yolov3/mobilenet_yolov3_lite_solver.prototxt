@@ -10,13 +10,14 @@ gamma: 0.5
 weight_decay: 0.00005
 snapshot: 1000
 snapshot_prefix: "models/yolov3/mobilenet_yolov3_lite_deploy"
-solver_mode: CPU
+solver_mode: GPU
 debug_info: false
 snapshot_after_train: true
 test_initialization: false
 average_loss: 10
-stepvalue: 25000
-stepvalue: 50000
+stepvalue: 20000
+stepvalue: 40000
+stepvalue: 60000
 iter_size: 4
 type: "RMSProp"
 eval_type: "detection"
