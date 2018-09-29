@@ -3,7 +3,7 @@
 set detector=1
 set confidence_threshold=0.3
 set in_dir=data\
-set wait_time=2000
+set wait_time=1000
 build\examples\ssd\Release\ssd_detect models\yolov3\mobilenet_yolov3_lite_deploy.prototxt ^
 models\yolov3\mobilenet_yolov3_lite_deploy.caffemodel ^
 %in_dir% ^

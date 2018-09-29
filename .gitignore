@@ -71,7 +71,7 @@ Makefile.config
 #data/*
 #models/*
 models/mNasNet/*
-#*.caffemodel
+*.caffemodel
 *.caffemodel.h5
 *.solverstate
 *.solverstate.h5
@@ -89,6 +89,9 @@ distribute/*
 python/caffe/proto/
 cmake_build
 .cmake_build
+CMakeFiles/*
+external/*
+models/darknet_yolov3/*
 
 # Generated documentation
 docs/_site

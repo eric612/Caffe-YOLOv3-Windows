@@ -24,6 +24,16 @@ YOLOv2|0.76|193 mb|N/A|N/A
 
 Note :  the yolo_detection_output_layer not be optimization , and the deploy model was made by [merge_bn.py](https://github.com/chuanqi305/MobileNet-SSD/blob/master/merge_bn.py)
 
+### Oringinal darknet-yolov3
+
+[Converter](https://github.com/eric612/MobileNet-YOLO/tree/master/models/darknet_yolov3) 
+
+mAP|Resolution|Download|NetScope|
+:---:|:---:|:---:|:---:
+53.9|416|[caffemodel](https://drive.google.com/file/d/12nLE6GtmwZxDiulwdEmB3Ovj5xx18Nnh/view?usp=sharing)|[graph](http://ethereon.github.io/netscope/#/gist/59c75a50e5b91d6dd80a879df3cfaf55)
+
+test on coco_minival_lmdb (IOU 0.5)
+
 ## Other models
 
 You can find non-depthwise convolution network here , [Yolo-Model-Zoo](https://github.com/eric612/Yolo-Model-Zoo)
@@ -52,31 +62,7 @@ The build step was the same as [MobileNet-SSD-windows](https://github.com/eric61
 > script/build_win.cmd 
 ```
 
-### Darknet YOLOv2 Demo (COCO)
-
-Download [yolov2 coco weights](https://pjreddie.com/darknet/yolov2/)
-
-Save at $caffe_root/models/convert 
-
-cd $caffe_root/models/convert 
-
-```
-python weights_to_prototxt.py
-```
-
-Note : you may need specify python caffe path or copy python lib. here
-
-cd $caffe_root
-
-```
-examples\demo_darknet19.cmd
-```
-
 ### Mobilenet-YOLO Demo
-
-Download [deploy model](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_deploy_iter_62000.caffemodel)
-
-Save at $caffe_root/models/yolov2
 
 ```
 > cd $caffe_root/
@@ -107,8 +93,7 @@ Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
 
 ### Future work 
 
-1. origina-yolov3 network
-2. COCO training and eval
+1. COCO training and eval
 
 ## Reference
 

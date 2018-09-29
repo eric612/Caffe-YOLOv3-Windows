@@ -465,7 +465,7 @@ message Yolov3Parameter{
   optional uint32 anchors_scale = 10 [default = 32];
   repeated float biases = 11;
   repeated uint32 mask = 12;
-  optional bool use_logic_gradient = 13 [default = true];
+  optional bool use_logic_gradient = 13 [default = false];
 }
 message RegionLossParameter{
   //Yolo 9000
