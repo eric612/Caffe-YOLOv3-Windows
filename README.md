@@ -95,13 +95,17 @@ Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
 
 ## Reference
 
-> https://github.com/eric612/Vehicle-Detection
+> https://github.com/weiliu89/caffe/tree/ssd
 
-> https://github.com/eric612/MobileNet-SSD-windows
+> https://pjreddie.com/darknet/yolo/
 
 > https://github.com/gklz1982/caffe-yolov2
 
 > https://github.com/duangenquan/YoloV2NCS
+
+> https://github.com/eric612/Vehicle-Detection
+
+> https://github.com/eric612/MobileNet-SSD-windows
 
 ## License and Citation
 
