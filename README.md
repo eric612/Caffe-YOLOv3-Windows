@@ -1,38 +1,43 @@
 # caffe-yolov3-windows
 
-A caffe implementation of MobileNet-YOLO (YOLOv2 base) detection network, with pretrained weights on VOC0712 and mAP=0.709
+A caffe implementation of MobileNet-YOLO detection network , first train on COCO trainval35k then fine-tune on 07+12 , test on VOC2007
 
-Network|mAP|Resolution|Download|NetScope|
-:---:|:---:|:---:|:---:|:---:
-MobileNet-YOLO-Lite|0.675|416|[deploy](https://github.com/eric612/MobileNet-YOLO/blob/master/models/yolov2/mobilenet_yolo_lite_deploy_iter_62000.caffemodel)|[graph](http://ethereon.github.io/netscope/#/gist/11229dc092ef68d3b37f37ce4d9cdec8)
-MobileNet-YOLOv3-Lite|0.737|416|[deploy](models/yolov3/)|[graph](http://ethereon.github.io/netscope/#/gist/f308433ad8ba69e5a4e36d02482f8829)|
-MobileNet-YOLOv3-Lite|0.717|320|[deploy](models/yolov3/)|[graph](http://ethereon.github.io/netscope/#/gist/f308433ad8ba69e5a4e36d02482f8829)|
+Network|mAP|Resolution|Download|NetScope|Inference time (GTX 1080)|Inference time (i5-4440)
+:---:|:---:|:---:|:---:|:---:|:---:|:---:
+MobileNet-YOLOv3-Lite|0.747|320|[caffemodel](https://github.com/eric612/MobileNet-YOLO/tree/master/models/yolov3)|[graph](http://ethereon.github.io/netscope/#/gist/816d4d061c77d42246c5c9d49c4cbcf4)|6 ms|150 ms
+MobileNet-YOLOv3-Lite|0.757|416|[caffemodel](https://github.com/eric612/MobileNet-YOLO/tree/master/models/yolov3)|[graph](http://ethereon.github.io/netscope/#/gist/816d4d061c77d42246c5c9d49c4cbcf4)|11 ms|280 ms
 
-Note : 
->1. Training from linux version and test on windows version , the mAP of MobileNetYOLO-lite was 0.668<br>
+* the [benchmark](https://github.com/eric612/MobileNet-YOLO/tree/master/benchmark) of cpu performance on Tencent/ncnn  framework
+* the deploy model was made by [merge_bn.py](https://github.com/chuanqi305/MobileNet-SSD/blob/master/merge_bn.py) , or you can try my custom [version](https://github.com/eric612/MobileNet-YOLO/tree/master/examples/merge_bn)
+* bn_model download [here](https://drive.google.com/file/d/1jB-JvuoMlLHvAhefGCwLGh_oBldcsfW3/view?usp=sharing) 
+
+## Linux Version
+
+[MobileNet-YOLO](https://github.com/eric612/MobileNet-YOLO)
 
 ## Performance
 
-Compare with [YOLOv2](https://pjreddie.com/darknet/yolov2/) , I can't find yolov3 score on voc2007 currently 
+Compare with [YOLO](https://pjreddie.com/darknet/yolo/) , (IOU 0.5)
 
-Network|mAP|Weight size|Inference time (GTX 1080)|Inference time (i5-4440)
+Network|mAP|Weight size|Resolution|NetScope
 :---:|:---:|:---:|:---:|:---:
-MobileNet-YOLOv3-Lite|0.717|20.3 mb|6 ms (320x320)|150 ms
-MobileNet-YOLOv3-Lite|0.737|20.3 mb|11 ms (416x416)|280 ms
-Tiny-YOLO|0.57|60.5 mb|N/A|N/A
-YOLOv2|0.76|193 mb|N/A|N/A
+[MobileNet-YOLOv3-Lite](https://github.com/eric612/MobileNet-YOLO/tree/master/models/yolov3_coco)|34.0*|[21.5 mb](https://drive.google.com/file/d/1bXZtB_wZBu1kOeagYtZgsjLq2CX0BGFD/view?usp=sharing)|320|[graph](http://ethereon.github.io/netscope/#/gist/b65f6b955e99c7d4c29a4b8008669f90)|
+[MobileNet-YOLOv3-Lite](https://github.com/eric612/MobileNet-YOLO/tree/master/models/yolov3_coco)|37.3*|[21.5 mb](https://drive.google.com/file/d/1bXZtB_wZBu1kOeagYtZgsjLq2CX0BGFD/view?usp=sharing)|416|[graph](http://ethereon.github.io/netscope/#/gist/b65f6b955e99c7d4c29a4b8008669f90)|
+[MobileNet-YOLOv3](https://github.com/eric612/MobileNet-YOLO/tree/master/models/yolov3_coco)|40.3*|[22.5 mb](https://drive.google.com/file/d/1G0FeQ7_ETc3zPn5HayhKi8Dz1-I5hU--/view?usp=sharing)|416|[graph](http://ethereon.github.io/netscope/#/gist/0ec45a4ca896553a20f9f9c16e80149f)|
+YOLOv3-Tiny|33.1|33.8 mb|416
 
-Note :  the yolo_detection_output_layer not be optimization , and the deploy model was made by [merge_bn.py](https://github.com/chuanqi305/MobileNet-SSD/blob/master/merge_bn.py)
+* (*) testdev-2015 server was closed , here use coco 2014 minival
 
 ### Oringinal darknet-yolov3
 
 [Converter](https://github.com/eric612/MobileNet-YOLO/tree/master/models/darknet_yolov3) 
 
-mAP|Resolution|Download|NetScope|
-:---:|:---:|:---:|:---:
-53.9|416|[caffemodel](https://drive.google.com/file/d/12nLE6GtmwZxDiulwdEmB3Ovj5xx18Nnh/view?usp=sharing)|[graph](http://ethereon.github.io/netscope/#/gist/59c75a50e5b91d6dd80a879df3cfaf55)
-
 test on coco_minival_lmdb (IOU 0.5)
+
+Network|mAP|Resolution|Download|NetScope|
+:---:|:---:|:---:|:---:|:---:
+yolov3|54.4|416|[caffemodel](https://drive.google.com/file/d/12nLE6GtmwZxDiulwdEmB3Ovj5xx18Nnh/view?usp=sharing)|[graph](http://ethereon.github.io/netscope/#/gist/59c75a50e5b91d6dd80a879df3cfaf55)
+yolov3-spp|59.3|608|[caffemodel](https://drive.google.com/file/d/17b5wsR9tzbdrRnyL_iFEvofJ8jCmQ1ff/view?usp=sharing)|[graph](http://ethereon.github.io/netscope/#/gist/71edbfacf4d39c56f2d82cbcb739ae38)
 
 ## Other models
 
@@ -43,9 +48,7 @@ network|mAP|resolution|macc|param|
 PVA-YOLOv3|0.703|416|2.55G|4.72M|
 Pelee-YOLOv3|0.703|416|4.25G|3.85M|
 
-## Linux Version
 
-[MobileNet-YOLO](https://github.com/eric612/MobileNet-YOLO)
 
 ### Configuring and Building Caffe 
 
@@ -89,11 +92,6 @@ Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
 > cd $caffe_root/
 > examples\train_yolov3_lite.cmd
 ```
-
-
-### Future work 
-
-1. COCO training and eval
 
 ## Reference
 
