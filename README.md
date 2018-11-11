@@ -102,3 +102,13 @@ Please check the path exist "$caffe_root\examples\VOC0712\VOC0712_trainval_lmdb"
 > https://github.com/gklz1982/caffe-yolov2
 
 > https://github.com/duangenquan/YoloV2NCS
+
+## License and Citation
+
+
+Please cite MobileNet-YOLO in your publications if it helps your research:
+
+    @article{MobileNet-YOLO,
+      Author = {eric612,Avisonic},
+      Year = {2018}
+    }
