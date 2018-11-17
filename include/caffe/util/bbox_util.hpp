@@ -29,7 +29,6 @@ typedef MultiBoxLossParameter_MiningType MiningType;
 
 typedef map<int, vector<NormalizedBBox> > LabelBBox;
 
-
 // Function used to sort NormalizedBBox, stored in STL container (e.g. vector),
 // in ascend order based on the score value.
 bool SortBBoxAscend(const NormalizedBBox& bbox1, const NormalizedBBox& bbox2);

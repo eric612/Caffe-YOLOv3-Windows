@@ -29,8 +29,7 @@
 
 namespace caffe {
 	
-	static inline float logistic_activate(float x) { return 1. / (1. + exp(-x)); }
-	static inline float logistic_gradient(float x) { return (1 - x)*x; }
+
 
 	template <typename Dtype>
 	Dtype overlap(Dtype x1, Dtype w1, Dtype x2, Dtype w2)
@@ -169,7 +168,9 @@ namespace caffe {
 		const vector<Blob<Dtype>*>& bottom, const vector<Blob<Dtype>*>& top) {
 		side_ = bottom[0]->width();
 		const Dtype* label_data = bottom[1]->cpu_data(); //[label,x,y,w,h]
-		diff_.ReshapeLike(*bottom[0]);
+		if (diff_.width() != bottom[0]->width()) {
+			diff_.ReshapeLike(*bottom[0]);
+		}
 		Dtype* diff = diff_.mutable_cpu_data();
 		caffe_set(diff_.count(), Dtype(0.0), diff);
 
@@ -177,9 +178,10 @@ namespace caffe {
 		int count = 0;
 		
 		const Dtype* input_data = bottom[0]->cpu_data();
-		//const Dtype* label_data = bottom[1]->cpu_data();
-		
-		swap_.ReshapeLike(*bottom[0]);
+		//const Dtype* label_data = bottom[1]->cpu_data();		
+		if (swap_.width() != bottom[0]->width()) {
+			swap_.ReshapeLike(*bottom[0]);
+		}
 		Dtype* swap_data = swap_.mutable_cpu_data();
 		//LOG(INFO) << diff_.channels() << "," << diff_.height();
 		//LOG(INFO)<<bottom[0]->count(1)*bottom[0]->num();
@@ -197,6 +199,7 @@ namespace caffe {
 					float best_iou = 0;
 					int best_class = -1;
 					vector<Dtype> best_truth;
+#ifdef CPU_ONLY
 					for (int c = 0; c < len; ++c) {
 						int index2 = c*stride + index;
 						//LOG(INFO)<<index2;
@@ -207,7 +210,7 @@ namespace caffe {
 							swap_data[index2] = logistic_activate(input_data[index2 + 0]);
 						}
 					}
-					//softmax_region(swap_data + index + 5 * stride, num_class_, stride);
+#endif
 					//LOG(INFO) << index + 5;
 					int y2 = s / side_;
 					int x2 = s % side_;
@@ -268,6 +271,8 @@ namespace caffe {
 				float best_iou = 0;
 				int best_index = 0;
 				int best_n = -1;
+				int best_n_second = -1;
+				int best_iou_second = 0;
 				int i = truth[0] * side_;
 				int j = truth[1] * side_;
 				int pos = j * side_ + i;
@@ -341,12 +346,14 @@ namespace caffe {
 		//LOG(INFO) << "iter: " << iter <<" loss: " << loss;
 		if (!(iter_ % 10))
 		{
-			LOG(INFO) << "avg_noobj: " << score_.avg_anyobj / 10. << " avg_obj: " << score_.avg_obj / time_count_ <<
-				" avg_iou: " << score_.avg_iou / time_count_ << " avg_cat: " << score_.avg_cat / time_count_ << " recall: " << score_.recall / time_count_ << " recall75: " << score_.recall75 / time_count_<< " count: " << class_count_/time_count_;
-			//LOG(INFO) << "avg_noobj: "<< avg_anyobj/(side_*side_*num_*bottom[0]->num()) << " avg_obj: " << avg_obj/count <<" avg_iou: " << avg_iou/count << " avg_cat: " << avg_cat/class_count << " recall: " << recall/count << " recall75: " << recall75 / count;
-			score_.avg_anyobj = score_.avg_obj = score_.avg_iou = score_.avg_cat = score_.recall = score_.recall75 = 0;
-			class_count_ = 0;
-			time_count_ = 0;
+			if(time_count_>0 ) {
+				LOG(INFO) << "avg_noobj: " << score_.avg_anyobj / 10. << " avg_obj: " << score_.avg_obj / time_count_ <<
+					" avg_iou: " << score_.avg_iou / time_count_ << " avg_cat: " << score_.avg_cat / time_count_ << " recall: " << score_.recall / time_count_ << " recall75: " << score_.recall75 / time_count_<< " count: " << class_count_/time_count_;
+				//LOG(INFO) << "avg_noobj: "<< avg_anyobj/(side_*side_*num_*bottom[0]->num()) << " avg_obj: " << avg_obj/count <<" avg_iou: " << avg_iou/count << " avg_cat: " << avg_cat/class_count << " recall: " << recall/count << " recall75: " << recall75 / count;
+				score_.avg_anyobj = score_.avg_obj = score_.avg_iou = score_.avg_cat = score_.recall = score_.recall75 = 0;
+				class_count_ = 0;
+				time_count_ = 0;
+			}
 		}
 		else {
 			score_.avg_anyobj += avg_anyobj / (side_*side_*num_*bottom[0]->num());
@@ -421,7 +428,7 @@ namespace caffe {
 	}
 
 #ifdef CPU_ONLY
-	//STUB_GPU(DetectionLossLayer);
+	STUB_GPU(Yolov3Layer);
 #endif
 
 	INSTANTIATE_CLASS(Yolov3Layer);

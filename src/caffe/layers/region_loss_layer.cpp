@@ -9,7 +9,10 @@
 #include "caffe/layers/region_loss_layer.hpp"
 #include "caffe/util/math_functions.hpp"
 #include "caffe/layers/sigmoid_layer.hpp"
-
+#include <algorithm>
+#include <cfloat>
+#include <vector>
+#include "caffe/common.hpp"
 #include "caffe/util/bbox_util.hpp"
 #ifdef USE_OPENCV
 #include <opencv2/core/core.hpp>
@@ -73,8 +76,7 @@ namespace caffe {
 		return box_intersection(a, b) / box_union(a, b);
 	}
 
-	static inline float logistic_activate(float x) { return 1. / (1. + exp(-x)); }
-	static inline float logistic_gradient(float x) { return (1 - x)*x; }
+
 	template <typename Dtype>
 	void get_region_box(vector<Dtype> &b, Dtype* x, vector<Dtype> biases, int n, int index, int i, int j, int w, int h, int stride) {
 
